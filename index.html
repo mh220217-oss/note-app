@@ -438,21 +438,32 @@
 <!-- 踏みとどまるモード（コンビニ・帰り道） -->
 <div class="modal center" id="sosModal">
   <div class="sheet centered">
-    <h3>🏪 踏みとどまるモード</h3>
+    <h3>🚶 踏みとどまるモード</h3>
     <div class="fam-msg" id="famMsg"></div>
-    <div class="sos-rules">
-      いま酒コーナーに向かってないか？ ここが今日の勝負どころ。<br>
+    <div class="seg" id="sosSeg" style="margin:12px 0;">
+      <button data-s="home" class="on" onclick="sosSet('home')">まだ行ってない</button>
+      <button data-s="store" onclick="sosSet('store')">もう店にいる</button>
+    </div>
+    <div class="sos-rules" id="rulesHome">
+      コンビニに寄りたくなってる。でも今日は「飲まない日」。<b>行かずに帰る</b>のが一番ラクな勝ち方。<br>
+      <b>①</b> コンビニの前を通らない道で帰る<br>
+      <b>②</b> 「今から帰る」と家族にひとことLINE<br>
+      <b>③</b> 玄関を入れば勝ち。寄り道しない<br>
+      <b>④</b> それでも欲しければ「家に着いて15分」待つ → たいてい消える
+    </div>
+    <div class="sos-rules" id="rulesStore" style="display:none;">
+      もう店の中／前だね。ここからでも引き返せる。<br>
       <b>①</b> 酒の棚には近づかない<br>
       <b>②</b> 買うのは 水・お茶・炭酸水・コーヒー だけ<br>
       <b>③</b> レジに直行 → まっすぐ帰る<br>
       <b>④</b> 家に着けば波は引く。あと10分の辛抱。
     </div>
     <div style="text-align:center; font-size:13px; color:var(--sub); margin-bottom:12px;" id="sosSub"></div>
-    <button class="btn zero" onclick="sosWin()">✊ 買わずに（or 飲み物だけで）帰る！</button>
+    <button class="btn zero" id="sosWinBtn" onclick="sosWin()">✊ 寄らずに帰る！</button>
     <div style="height:8px"></div>
     <button class="btn ghost" onclick="rotFam()">💬 もう一言ほしい</button>
     <div style="height:8px"></div>
-    <button class="btn drink" onclick="sosGiveIn()">…買ってしまった（正直に記録）</button>
+    <button class="btn drink" onclick="sosGiveIn()">…寄って買ってしまった（正直に記録）</button>
     <div style="height:8px"></div>
     <button class="btn ghost" onclick="closeSos()">閉じる</button>
   </div>
@@ -769,13 +780,20 @@ function surfGiveIn(){
 
 /* ============ 踏みとどまるモード（コンビニ・帰り道） ============ */
 function openSos(){
-  rotFam();
+  rotFam(); sosSet('home');
+  document.getElementById('sosModal').classList.add('show');
+}
+function sosSet(mode){
+  const home=mode==='home';
+  document.getElementById('rulesHome').style.display=home?'block':'none';
+  document.getElementById('rulesStore').style.display=home?'none':'block';
+  document.querySelectorAll('#sosSeg button').forEach(b=>b.classList.toggle('on',b.dataset.s===mode));
+  document.getElementById('sosWinBtn').textContent=home?'✊ 寄らずに帰る！':'✊ 買わずに（or 飲み物だけで）帰る！';
   const st=streakZero(); const fd=fishDays();
-  let sub='この画面を、コンビニの前で開くのを習慣に。';
-  if(st>=2) sub=`🔥 今 ${st}日連続。ここで買えば、また0からだ。`;
+  let sub= home?'家に着けば波は引く。今の10分だけ。':'ここからでも引き返せる。';
+  if(st>=2) sub=`🔥 今 ${st}日連続。ここで折れれば、また0からだ。`;
   else if(fd!==null && fd>=0 && fd<=2) sub=`🎣 釣りまであと${fd===0?'今日':fd+'日'}。シラフで竿を出そう。`;
   document.getElementById('sosSub').textContent=sub;
-  document.getElementById('sosModal').classList.add('show');
 }
 function rotFam(){ famIdx++; document.getElementById('famMsg').textContent = FAMILY_MSGS[famIdx%FAMILY_MSGS.length](); }
 function closeSos(){document.getElementById('sosModal').classList.remove('show');}
