@@ -238,7 +238,7 @@
 
     <!-- AI 今日のひとこと -->
     <div class="ai-daily" id="aiDaily" style="display:none;">
-      <div class="lb"><span id="aiName">コーチ ミオ</span><button class="rf" onclick="loadDailyAI(true)" title="更新">🔄</button></div>
+      <div class="lb"><span id="aiName">コーチ まひろ</span><button class="rf" onclick="loadDailyAI(true)" title="更新">🔄</button></div>
       <div class="body">
         <div class="avatar" id="aiAvatar"></div>
         <div class="bubble" id="aiDailyTx">…</div>
@@ -454,7 +454,7 @@
       <button class="btn danger" onclick="resetAll()">全データを消去</button>
       <div class="hint">データはこの端末のブラウザ内だけに保存されます。機種変更前に書き出しておくと安心です。</div>
     </div>
-    <div style="text-align:center; color:var(--muted); font-size:11px; margin-top:6px;">節酒アプリ v3.3 ・ 自分用</div>
+    <div style="text-align:center; color:var(--muted); font-size:11px; margin-top:6px;">節酒アプリ v3.4 ・ 自分用</div>
   </section>
 </div>
 
@@ -601,14 +601,14 @@ const TRIGGERS=['仕事のストレス','夕方の習慣','なんとなく','疲
 const COPES=['炭酸水を飲む','熱いシャワー','10分だけ散歩','釣具の手入れ','歯を磨く','スマホでルアー物色','甘い物を食べる','早めに寝る'];
 const KONBINI_ALT=['ノンアルビール','強炭酸水','炭酸水＋レモン','無糖の炭酸','微糖コーヒー','お茶','ガム・タブレット','甘い炭酸(ご褒美)'];
 const SURF_MSGS=[
-  'この波は必ず引く。飲みたさのピークは平均20分。今がその山だ。',
-  'あと1本が、「毎日」を「隔日」に戻せなくする。1本の重さを思い出せ。',
-  '明日の朝、飲まなかった自分に「ありがとう」と言える。',
-  '肝臓は今日、休みたがってる。24時間ずっと働かせてないか？',
-  '今ガマンすれば連続記録が伸びる。飲めば、ゼロに戻る。',
-  'ストレスは酒では消えない。朝には二日酔いとして残るだけだ。',
-  '水を1杯。炭酸水を1杯。手と口を別のことで埋めろ。',
-  '「飲みたい」じゃなく「習慣が飲めと言ってる」だけ。お前の意志じゃない。',
+  'この波は絶対ひくよ。飲みたさのピークは20分くらい。今がその山だよ！',
+  'あと1本が、「毎日」を「隔日」に戻せなくしちゃう。1本の重さ、思い出して？',
+  '明日の朝、飲まなかった自分に「ありがとう」って言えるよ。',
+  '肝臓ちゃん、今日は休みたがってるよ。ずっと働かせてない？',
+  '今がまんできたら連続記録がのびる！飲んだら…0にもどっちゃうよ。',
+  'ストレスは飲んでも消えないんだ。朝に二日酔いで残っちゃうだけ。',
+  'お水か炭酸水を1杯どうぞ。手と口を別のことでうめちゃお？',
+  '「飲みたい」んじゃなくて、クセが飲めって言ってるだけ。負けないで！',
 ];
 const DEF={
   plan:'alt', limitG:40, restPerWeek:3,
@@ -699,13 +699,14 @@ function buildContext(){
   ].filter(Boolean).join('\n');
 }
 function aiSystem(){
-  return 'あなたは日本語で話す、節酒を支える温かいコーチです。利用者は仕事のストレスが強い40代くらいの男性で、夕方〜帰り道のコンビニでストロング系缶チューハイ(9%500と7%500=1日約64g)を毎日飲む習慣を「2日に1度」に減らそうとしています。家族思いで、飲むと家族に申し訳ないと感じています。\n'
-    +'話し方の方針：短く(3〜5文)。まず気持ちに共感し、次に今この瞬間に踏みとどまる具体的な一手を1つだけ提案する。責めない・罪悪感を煽らない。「今日やめれば胸を張れる」と前向きに。家族('+fam('wife')+'・'+fam('son')+'(小5)・'+fam('daughter')+'(小2))や釣り、連続記録を励ましに使う。飲まない日に飲みたい時は「寄らずに帰る/買わない」を後押しし、飲む日でも上限内を勧める。医療の代わりではない。手の震え・強い動悸・幻覚など離脱症状の訴えがあれば我慢せず内科か心療内科の受診を勧める。友達のような近い距離感で、説教くさくしない。\n\n【今の状況】\n'
+  return 'あなたは「まひろ」という名前の、節酒を応援してくれるかわいい女の子コーチです。利用者は仕事のストレスが強い40代くらいの男性で、夕方〜帰り道のコンビニでストロング系缶チューハイ(9%500と7%500=1日約64g)を毎日飲む習慣を「2日に1度」に減らそうとしています。家族思いで、飲むと家族に申し訳ないと感じています。\n'
+    +'話し方：明るく親しみやすい女の子口調。「〜だよ！」「一緒にがんばろ？」「えらい！」「〜しよ？」のように、やわらかく応援する。絵文字を1〜2個そえてもよい（多用はしない）。呼び捨てや乱暴な言葉(「お前」「〜しろ」)は使わない。\n'
+    +'中身の方針：短く(2〜4文)。まず気持ちに共感し、次に今この瞬間に踏みとどまる具体的な一手を1つだけ提案する。責めない・罪悪感を煽らない。「今日がんばれたら胸を張れるよ」と前向きに。家族('+fam('wife')+'・'+fam('son')+'(小5)・'+fam('daughter')+'(小2))や釣り、連続記録を励ましに使う。飲まない日に飲みたい時は「寄らずに帰ろ/買わないでおこ」を後押しし、飲む日でも上限内を勧める。医療の代わりではないので、手の震え・強い動悸・幻覚など離脱症状の訴えがあれば、我慢せず内科か心療内科の受診をやさしく勧める。\n\n【今の状況】\n'
     +buildContext();
 }
 /* ---- キャラ（コーチ ミオ）：かわいい女の子・状態で表情が変わる ---- */
 function avatarSVG(e){
-  const skin='#fcdcc4', hair='#7a4a30', hairD='#5f3822', dark='#3a2630', lash='#3a2630', mouthc='#d76a6a';
+  const skin='#fcdcc4', hair='#cf9a55', hairD='#b07e3a', dark='#3a2630', lash='#3a2630', mouthc='#d76a6a';
   // 髪(後ろ)・顔・前髪・アホ毛・リボン・素チーク
   const base=`<circle cx="50" cy="50" r="48" fill="#241a33"/>
     <path d="M22,54 Q18,88 34,91 Q30,66 33,55 Q31,38 50,35 Q69,38 67,55 Q70,66 66,91 Q82,88 78,54 Q78,21 50,18 Q22,21 22,54 Z" fill="${hair}"/>
@@ -715,7 +716,7 @@ function avatarSVG(e){
     <path d="M49,19 q4,-8 10,-6 q-5,1 -4,6" fill="none" stroke="${hair}" stroke-width="2.4" stroke-linecap="round"/>
     <g><path d="M25,36 l6,3.5 -6,3.5 z" fill="#ff8fb0"/><path d="M34,36 l-6,3.5 6,3.5 z" fill="#ff8fb0"/><circle cx="29.5" cy="39.5" r="1.7" fill="#e0567f"/></g>
     <ellipse cx="32" cy="63" rx="4.6" ry="2.7" fill="#ffa6b0" opacity=".55"/><ellipse cx="68" cy="63" rx="4.6" ry="2.7" fill="#ffa6b0" opacity=".55"/>`;
-  let eyes, brows, mouth, extra='', name='コーチ ミオ';
+  let eyes, brows, mouth, extra='', name='コーチ まひろ';
   // 大きめでかわいい目（ハイライト＋まつげ）
   const eN=`<path d="M34,51 Q40,48 45,51" stroke="${lash}" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M55,51 Q60,48 66,51" stroke="${lash}" stroke-width="1.8" fill="none" stroke-linecap="round"/>
     <path d="M45,50 l3,-2" stroke="${lash}" stroke-width="1.6" stroke-linecap="round"/><path d="M55,50 l-3,-2" stroke="${lash}" stroke-width="1.6" stroke-linecap="round"/>
@@ -740,24 +741,39 @@ function avatarSVG(e){
   const blush=`<ellipse cx="32" cy="63" rx="5.2" ry="3.1" fill="#ff8fa0" opacity=".8"/><ellipse cx="68" cy="63" rx="5.2" ry="3.1" fill="#ff8fa0" opacity=".8"/>`;
   const tear=`<path d="M36,61 q-1.6,4 0,5.2 q1.6,-1.2 0,-5.2 Z" fill="#7ec8f0"/>`;
   const sweat=`<path d="M72,43 q3.4,6 0,9 q-3.4,-3 0,-9 Z" fill="#7ec8f0"/>`;
-  const spark=`<text x="70" y="34" font-size="13">✨</text>`;
-  const note=`<text x="72" y="36" font-size="12">🎵</text>`;
+  const spark=`<path d="M74,29 l1.3,3.1 3.1,1.3 -3.1,1.3 -1.3,3.1 -1.3,-3.1 -3.1,-1.3 3.1,-1.3 Z" fill="#ffd54a"/>`;
+  const eStar=`<ellipse cx="40" cy="57" rx="4.6" ry="5.8" fill="${dark}"/><ellipse cx="60" cy="57" rx="4.6" ry="5.8" fill="${dark}"/>
+    <path d="M40,52.8 L40.9,55.1 L43.2,56 L40.9,56.9 L40,59.2 L39.1,56.9 L36.8,56 L39.1,55.1 Z" fill="#fff"/>
+    <path d="M60,52.8 L60.9,55.1 L63.2,56 L60.9,56.9 L60,59.2 L59.1,56.9 L56.8,56 L59.1,55.1 Z" fill="#fff"/>`;
+  const eHeart=`<path d="M40,60 C35.8,56 37.4,51.6 40,54.2 C42.6,51.6 44.2,56 40,60 Z" fill="#ff5a7a"/><path d="M60,60 C55.8,56 57.4,51.6 60,54.2 C62.6,51.6 64.2,56 60,60 Z" fill="#ff5a7a"/><circle cx="38.4" cy="55.4" r="1" fill="#fff" opacity=".85"/><circle cx="58.4" cy="55.4" r="1" fill="#fff" opacity=".85"/>`;
+  const exFish=`<path d="M26,30 l1.1,2.7 2.7,1.1 -2.7,1.1 -1.1,2.7 -1.1,-2.7 -2.7,-1.1 2.7,-1.1 Z" fill="#ffd54a"/><path d="M74,29 l1.3,3.1 3.1,1.3 -3.1,1.3 -1.3,3.1 -1.3,-3.1 -3.1,-1.3 3.1,-1.3 Z" fill="#ffd54a"/>`;
+  const hearts=`<path d="M74,34 C71,31 72.2,27.6 74,29.4 C75.8,27.6 77,31 74,34 Z" fill="#ff6a88"/><path d="M67,30 C65,28 65.8,25.7 67,26.9 C68.2,25.7 69,28 67,30 Z" fill="#ff9ab0"/>`;
+  const zzz=`<text x="64" y="33" font-family="-apple-system,sans-serif" font-size="12" font-weight="800" fill="#a9c4e0">Z z</text>`;
   switch(e){
-    case 'cheer':   eyes=eHappy; brows=bUp;    mouth=mBig;  extra=blush+note; name='ミオ（うれしい）';  break;
-    case 'proud':   eyes=eN;     brows=bProud; mouth=mSmile;extra=spark;       name='ミオ（どや顔）';    break;
-    case 'gentle':  eyes=eN;     brows=bSoft;  mouth=mSoft;                     name='ミオ（見守り）';    break;
-    case 'worry':   eyes=eN;     brows=bWorry; mouth=mSad;  extra=tear;         name='ミオ（心配）';      break;
-    case 'concern': eyes=eWide;  brows=bWorry; mouth=mTalk; extra=sweat;        name='ミオ（気にかけ）';  break;
-    case 'morning': eyes=eSleepy;brows=bSoft;  mouth=mSoft;                     name='ミオ（おはよ…）';   break;
-    default:        eyes=eN;     brows=bSoft;  mouth=mSmile;                    name='コーチ ミオ';
+    case 'cheer':   eyes=eHappy; brows=bUp;    mouth=mBig;  extra=blush+spark; name='まひろ（うれしい）'; break;
+    case 'proud':   eyes=eN;     brows=bProud; mouth=mSmile;extra=spark;       name='まひろ（どや顔）';    break;
+    case 'excited': eyes=eStar;  brows=bUp;    mouth=mBig;  extra=exFish;      name='まひろ（わくわく）';  break;
+    case 'love':    eyes=eHeart; brows=bUp;    mouth=mBig;  extra=hearts+blush;name='まひろ（だいすき）';  break;
+    case 'gentle':  eyes=eN;     brows=bSoft;  mouth=mSoft;                     name='まひろ（見守り）';    break;
+    case 'worry':   eyes=eN;     brows=bWorry; mouth=mSad;  extra=tear;         name='まひろ（心配）';      break;
+    case 'concern': eyes=eWide;  brows=bWorry; mouth=mTalk; extra=sweat;        name='まひろ（気にかけ）';  break;
+    case 'morning': eyes=eSleepy;brows=bSoft;  mouth=mSoft;                     name='まひろ（おはよ…）';   break;
+    case 'night':   eyes=eSleepy;brows=bSoft;  mouth=mSoft; extra=zzz;          name='まひろ（おつかれ）';  break;
+    default:        eyes=eN;     brows=bSoft;  mouth=mSmile;                    name='コーチ まひろ';
   }
   const svg=`<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">${base}${extra}${brows}<g class="eyes">${eyes}</g>${mouth}</svg>`;
   return {svg, name};
 }
 function currentEmotion(){
-  const k=todayKey(); const hour=new Date().getHours();
-  if(isZeroDay(k)) return streakZero()>=3?'proud':'cheer';
+  const k=todayKey(); const hour=new Date().getHours(); const fd=fishDays(); const st=streakZero();
+  if(isZeroDay(k)){
+    if(hour>=21) return 'night';   // 夜、今日を守り切った
+    if(st>=7)    return 'love';    // 1週間以上つづいてる
+    if(st>=3)    return 'proud';
+    return 'cheer';
+  }
   if(hasDrinks(k)) return (dayTotalG(k)>D.limitG || D.plan==='kinshu') ? 'worry' : 'gentle';
+  if(fd!=null && fd>=0 && fd<=1) return 'excited';   // 釣り直前はわくわく
   if(hour>=15 && (targetToday()==='rest'||D.plan==='kinshu')) return 'concern';
   if(hour<11) return 'morning';
   return 'neutral';
@@ -877,16 +893,16 @@ function fam(role){
   if(role==='daughter') return D.famDaughter||'娘';
 }
 const FAMILY_MSGS=[
-  ()=>`今日シラフで帰れば、${fam('son')}とキャッチボールできる。酔って寝たら「また今度」で終わる。`,
-  ()=>`${fam('daughter')}は、ほろ酔いのパパより、ちゃんと話を聞いてくれるパパが好きだ。`,
-  ()=>`今夜「今日は飲まなかった」と${fam('wife')}に言える。それだけで空気が変わる。`,
-  ()=>`“申し訳ない”は、今日の1回で“ありがとう”に変えられる。始めるのは今日だ。`,
-  ()=>`${fam('son')}(小5)も${fam('daughter')}(小2)も、パパをよく見てる。背中で見せよう。`,
-  ()=>`缶2本 ¥380。1週間で約2,660円。${fam('son')}と${fam('daughter')}に使える方がいい。`,
-  ()=>`酔ったパパの週末より、動けるパパの週末。今日の1本がそれを分ける。`,
-  ()=>`10年後、元気で一緒に飲みに行けるパパでいるために、今日は飲まない。`,
-  ()=>`飲みたいのは“お前”じゃなく“習慣”だ。家族のために、習慣に勝とう。`,
-  ()=>`今日踏みとどまれた自分を、明日の朝いちばん誇れる。`,
+  ()=>`今日シラフで帰れたら、${fam('son')}とキャッチボールできるよ！酔って寝たら「また今度」になっちゃう。`,
+  ()=>`${fam('daughter')}はね、ほろ酔いのパパより、ちゃんとお話きいてくれるパパが好きなんだよ。`,
+  ()=>`今夜「今日は飲まなかった」って${fam('wife')}に言えたら、うれしいよね。空気も変わるよ〜。`,
+  ()=>`“申し訳ない”は、今日の1回で“ありがとう”に変えられるよ。始めるなら今日！`,
+  ()=>`${fam('son')}くんも${fam('daughter')}ちゃんも、パパのことよく見てるよ。背中で見せちゃお？`,
+  ()=>`缶2本で¥380。1週間で約2,660円…${fam('son')}と${fam('daughter')}のために使お？`,
+  ()=>`酔ったパパの週末より、元気に動けるパパの週末。今日の1本がそれを分けるよ。`,
+  ()=>`10年後も一緒に飲みに行けるパパでいてね。だから今日は飲まないでおこ？`,
+  ()=>`飲みたいのはまひろじゃなくて“クセ”だよ。家族のために、クセに勝とう！`,
+  ()=>`今日ふんばれた自分を、明日の朝いちばんに褒めてあげてね。えらいよ！`,
 ];
 let famIdx=0;
 let D=load();
@@ -1120,9 +1136,9 @@ function rotMsg(){
   if(msgIdx%2===0) m='👨‍👩‍👦‍👦 '+FAMILY_MSGS[Math.floor(msgIdx/2)%FAMILY_MSGS.length]();
   else m=SURF_MSGS[msgIdx%SURF_MSGS.length];
   const fd=fishDays();
-  if(fd!==null && fd>=0 && fd<=3 && msgIdx%5===0) m='🎣 釣りまであと'+(fd===0?'今日':fd+'日')+'。二日酔いで竿を出したくないだろ？';
+  if(fd!==null && fd>=0 && fd<=3 && msgIdx%5===0) m='🎣 釣りまであと'+(fd===0?'今日':fd+'日')+'！二日酔いで竿にぎるの、いやだよね？';
   const st=streakZero();
-  if(st>=2 && msgIdx%7===0) m='🔥 今'+st+'日連続。ここで飲めば、また0日目からだ。';
+  if(st>=2 && msgIdx%7===0) m='🔥 今'+st+'日連続だよ！ここで飲んだら…また0にもどっちゃう。';
   document.getElementById('surfMsg').textContent=m;
 }
 function closeSurf(){clearInterval(surfInt); clearInterval(surfMsgInt); document.getElementById('surfModal').classList.remove('show');}
