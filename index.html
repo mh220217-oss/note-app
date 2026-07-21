@@ -444,7 +444,7 @@
       <button class="btn danger" onclick="resetAll()">全データを消去</button>
       <div class="hint">データはこの端末のブラウザ内だけに保存されます。機種変更前に書き出しておくと安心です。</div>
     </div>
-    <div style="text-align:center; color:var(--muted); font-size:11px; margin-top:6px;">節酒アプリ v3.0 ・ 自分用</div>
+    <div style="text-align:center; color:var(--muted); font-size:11px; margin-top:6px;">節酒アプリ v3.1 ・ 自分用</div>
   </section>
 </div>
 
@@ -678,13 +678,15 @@ function buildContext(){
   return [
     '日付:'+k+' 現在時刻:'+now.getHours()+'時',
     '今日の予定:'+(targetToday()==='rest'?'飲まない日':'飲んでもよい日(上限'+D.limitG+'g)'),
+    isZeroDay(k)?'★重要: 本人が今日を「飲まない日」にすると宣言済み。夜まで守り切る応援を':'',
+    hasDrinks(k)?'今日はすでに飲酒の記録あり':'',
     '今日ここまで:'+Math.round(dayTotalG(k))+'g',
     '連続で飲まない日:'+streakZero()+'日 / 今週の休肝日:'+weekRest()+'/'+D.restPerWeek,
     '普段:1日約'+D.usualG+'g（毎日→2日に1度を目標）',
     (fd!==null?('次の釣りまで:'+(fd<0?'過去':fd+'日')):'釣り予定:未登録'),
     '踏みとどまった回数:'+(D.surfWins||0),
     '直近14日:'+(recent.join(' ')||'記録なし')
-  ].join('\n');
+  ].filter(Boolean).join('\n');
 }
 function aiSystem(){
   return 'あなたは日本語で話す、節酒を支える温かいコーチです。利用者は仕事のストレスが強い40代くらいの男性で、夕方〜帰り道のコンビニでストロング系缶チューハイ(9%500と7%500=1日約64g)を毎日飲む習慣を「2日に1度」に減らそうとしています。家族思いで、飲むと家族に申し訳ないと感じています。\n'
@@ -715,16 +717,25 @@ function chatSend(){
     .catch(e=>replaceTyping('エラー：'+e.message,'err'));
 }
 /* ---- 今日のひとこと ---- */
+// 今日の状態が変わったら（宣言した・飲んだ等）ひとことも作り直す
+function dailyStateKey(){
+  const k=todayKey();
+  return k+'|'+(isZeroDay(k)?'zero':(hasDrinks(k)?'drank':'none'))+'|'+targetToday();
+}
+let dailyBusy=false;
 function loadDailyAI(force){
   const card=document.getElementById('aiDaily');
   if(!aiOn()){card.style.display='none'; return;}
   card.style.display='block';
-  const k=todayKey();
-  if(!force && D.aiDaily && D.aiDaily.date===k){ document.getElementById('aiDailyTx').textContent=D.aiDaily.msg; return; }
+  const st=dailyStateKey();
+  if(!force && D.aiDaily && D.aiDaily.state===st){ document.getElementById('aiDailyTx').textContent=D.aiDaily.msg; return; }
+  if(dailyBusy) return; // 生成中の多重呼び出し防止
+  dailyBusy=true;
   document.getElementById('aiDailyTx').textContent='…考え中';
   callAI(aiSystem()+'\n\n上記を踏まえ、今日の励ましを1〜2文だけ、短く。前置き不要。', [{role:'user',text:'今日のひとことを1つ。'}])
-    .then(m=>{D.aiDaily={date:k,msg:m}; save(); document.getElementById('aiDailyTx').textContent=m;})
-    .catch(e=>{document.getElementById('aiDailyTx').textContent='（取得できませんでした：'+e.message+'）';});
+    .then(m=>{D.aiDaily={date:todayKey(),state:st,msg:m}; save(); document.getElementById('aiDailyTx').textContent=m;})
+    .catch(e=>{document.getElementById('aiDailyTx').textContent='（取得できませんでした：'+e.message+'）';})
+    .finally(()=>{dailyBusy=false;});
 }
 /* ---- 週次ふりかえり ---- */
 function loadWeeklyAI(){
