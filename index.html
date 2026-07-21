@@ -76,11 +76,11 @@
   .btn.danger{background:transparent; color:var(--red); border:1px solid var(--red);}
   .btn:active{transform:scale(.98);}
 
-  .quick-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px;}
-  .qbtn{background:var(--card2); border:1px solid var(--line); border-radius:12px; padding:10px 6px; text-align:center; cursor:pointer; font-size:11px; color:var(--txt);}
-  .qbtn:active{transform:scale(.96); border-color:var(--accent);}
-  .qbtn .em{font-size:20px; display:block; margin-bottom:2px;}
-  .qbtn .g{font-size:10px; color:var(--sub); display:block;}
+  .act-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px;}
+  .abtn{background:var(--card2); border:1px solid var(--line); border-radius:12px; padding:10px 2px; color:var(--txt); font-size:11px; font-weight:700; cursor:pointer; line-height:1.6; text-align:center;}
+  .abtn .em{font-size:20px; display:block;}
+  .abtn:active{transform:scale(.96); border-color:var(--accent);}
+  .card .verdict .big{font-size:20px;}
 
   .log-item{display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--line);}
   .log-item:last-child{border-bottom:none;}
@@ -211,20 +211,11 @@
       <div class="num" id="fishNum"></div>
     </div>
 
-    <!-- 今日の判定 -->
-    <div class="verdict rest" id="verdict">
-      <div class="tag" id="vTag">今日の予定</div>
-      <div class="big" id="vBig">－</div>
-      <div class="msg" id="vMsg"></div>
-    </div>
-
     <!-- 夕方の魔の時間アラート -->
     <div class="danger" id="dangerBox" style="display:none;">
       <div class="t" id="dangerT">⚠️ 魔の時間帯</div>
       <div class="s" id="dangerS"></div>
       <button class="btn sos" onclick="openSos()">🏪 コンビニに寄りそう…助けて</button>
-      <div style="height:8px"></div>
-      <button class="btn urge" onclick="openSurf()">🌊 飲みたい波が来た（20分だけ耐える）</button>
       <div style="height:8px"></div>
       <button class="btn zero" onclick="markZero()">✊ 今日は飲まずに乗り切る</button>
     </div>
@@ -249,6 +240,11 @@
         <h2 id="todayDateLabel" style="margin:0;">今日</h2>
         <span style="font-size:11px; color:var(--muted);" id="nowClock"></span>
       </div>
+      <div class="verdict rest" id="verdict" style="margin:10px 0 14px; padding:13px 14px;">
+        <div class="tag" id="vTag">今日の予定</div>
+        <div class="big" id="vBig">－</div>
+        <div class="msg" id="vMsg"></div>
+      </div>
       <div class="today-num">
         <span class="big" id="todayG">0</span>
         <span class="unit">g（純アルコール）</span>
@@ -264,23 +260,21 @@
     </div>
 
     <div class="card">
-      <button class="btn sos" onclick="openSos()">🏪 帰り道・コンビニで踏みとどまる</button>
-      <div style="height:10px"></div>
-      <button class="btn ai" onclick="openChat()">💬 AIコーチに相談する</button>
-      <div style="height:10px"></div>
-      <button class="btn zero" id="zeroBtn" onclick="markZero()">✊ 今日は「飲まない日」にする</button>
-      <div style="height:10px"></div>
-      <button class="btn urge" onclick="openSurf()">🌊 飲みたい…（20分やり過ごす）</button>
-      <div style="height:10px"></div>
-      <button class="btn ghost" onclick="openSleep()">😴 眠りアシスト（酒なしで寝る）</button>
-      <div style="height:10px"></div>
-      <button class="btn drink" onclick="openLog()">😔 飲んだものを記録する</button>
-      <div class="quick-grid" id="quickGrid"></div>
+      <div class="mrow" style="margin-bottom:10px;">
+        <button class="btn zero" id="zeroBtn" onclick="markZero()">✊ 飲まない日にする</button>
+        <button class="btn sos" onclick="openSos()">🏪 踏みとどまる</button>
+      </div>
+      <div class="act-grid">
+        <button class="abtn" onclick="openChat()"><span class="em">💬</span>AI相談</button>
+        <button class="abtn" onclick="openSurf()"><span class="em">🌊</span>20分耐える</button>
+        <button class="abtn" onclick="openSleep()"><span class="em">😴</span>眠り</button>
+        <button class="abtn" onclick="openLog()"><span class="em">😔</span>飲んだ記録</button>
+      </div>
     </div>
 
-    <div class="card">
+    <div class="card" id="todayLogCard" style="display:none;">
       <h2>今日の記録</h2>
-      <div id="todayLog"><div class="empty">まだ記録がありません</div></div>
+      <div id="todayLog"></div>
     </div>
   </section>
 
@@ -450,7 +444,7 @@
       <button class="btn danger" onclick="resetAll()">全データを消去</button>
       <div class="hint">データはこの端末のブラウザ内だけに保存されます。機種変更前に書き出しておくと安心です。</div>
     </div>
-    <div style="text-align:center; color:var(--muted); font-size:11px; margin-top:6px;">節酒アプリ v2.9 ・ 自分用</div>
+    <div style="text-align:center; color:var(--muted); font-size:11px; margin-top:6px;">節酒アプリ v3.0 ・ 自分用</div>
   </section>
 </div>
 
@@ -909,7 +903,7 @@ function renderHome(){
   document.getElementById('weekRest').innerHTML=weekRest()+'<small>/'+D.restPerWeek+'</small>';
   document.getElementById('streakWarn').textContent = st>0 ? ('🔥 '+st+'日連続で守れてる。ここで飲むとゼロに戻る。') : '';
 
-  renderQuick(); renderTodayLog();
+  renderTodayLog();
   document.getElementById('zeroBtn').style.opacity=done?.5:1;
 
   // 釣り
@@ -934,25 +928,12 @@ function fishDays(){
   const now=new Date(); now.setHours(0,0,0,0);
   return Math.round((t-now)/86400000);
 }
-function renderQuick(){
-  const el=document.getElementById('quickGrid'); el.innerHTML='';
-  PRESETS.filter(p=>p.id!=='other').slice(0,6).forEach(p=>{
-    const g=Math.round(alcG(p.ml,p.pct));
-    const d=document.createElement('div'); d.className='qbtn';
-    d.innerHTML=`<span class="em">${p.em}</span>${p.name.replace(' 500','').replace(' 350缶','缶')}<span class="g">${g}g</span>`;
-    d.onclick=()=>quickAdd(p); el.appendChild(d);
-  });
-}
-function quickAdd(p){
-  const k=todayKey(); const o=dayObj(k); o.zero=false;
-  o.drinks.push({name:p.name,em:p.em,ml:p.ml,pct:p.pct,g:alcG(p.ml,p.pct),cost:p.cost,kcal:p.kcal,count:1});
-  save(); renderHome(); toast(p.em+' 記録（'+Math.round(alcG(p.ml,p.pct))+'g）');
-}
 function renderTodayLog(){
   const k=todayKey(); const o=D.days[k];
+  const card=document.getElementById('todayLogCard');
   const el=document.getElementById('todayLog');
-  if(!o || (!o.drinks.length && !o.zero)){el.innerHTML='<div class="empty">まだ記録がありません</div>'; return;}
-  if(o.zero && !o.drinks.length){el.innerHTML='<div class="empty" style="color:var(--green)">✊ 飲まない日として記録済み</div>'; return;}
+  if(!o || !o.drinks.length){ card.style.display='none'; el.innerHTML=''; return; }
+  card.style.display='block';
   el.innerHTML='';
   o.drinks.forEach((x,i)=>{
     const div=document.createElement('div'); div.className='log-item';
