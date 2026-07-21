@@ -229,6 +229,15 @@
       <button class="btn zero" onclick="markZero()">✊ 今日は飲まずに乗り切る</button>
     </div>
 
+    <!-- 朝チェックイン -->
+    <div class="card" id="morningCard" style="display:none;">
+      <h2 style="margin-bottom:8px;">🌅 おはよう。昨夜はどうだった？</h2>
+      <div style="font-size:12px; color:var(--sub); margin-bottom:6px;">昨夜の眠り</div>
+      <div class="chips" id="sleepPick"></div>
+      <div style="font-size:12px; color:var(--sub); margin:10px 0 6px;">今朝の体調</div>
+      <div class="chips" id="moodPick"></div>
+    </div>
+
     <!-- AI 今日のひとこと -->
     <div class="ai-daily" id="aiDaily" style="display:none;">
       <div class="lb"><span>☀️ AIから今日のひとこと</span><button class="rf" onclick="loadDailyAI(true)" title="更新">🔄</button></div>
@@ -262,6 +271,8 @@
       <button class="btn zero" id="zeroBtn" onclick="markZero()">✊ 今日は「飲まない日」にする</button>
       <div style="height:10px"></div>
       <button class="btn urge" onclick="openSurf()">🌊 飲みたい…（20分やり過ごす）</button>
+      <div style="height:10px"></div>
+      <button class="btn ghost" onclick="openSleep()">😴 眠りアシスト（酒なしで寝る）</button>
       <div style="height:10px"></div>
       <button class="btn drink" onclick="openLog()">😔 飲んだものを記録する</button>
       <div class="quick-grid" id="quickGrid"></div>
@@ -301,6 +312,11 @@
 
   <!-- ============ 記録・恐怖 ============ -->
   <section class="page" id="page-stats">
+    <div class="card" id="insightCard">
+      <h2>🔎 あなたの傾向（記録から自動集計）</h2>
+      <div id="insightBody" style="font-size:13px; line-height:1.9;"></div>
+    </div>
+
     <div class="card" id="aiWeeklyCard">
       <h2>📊 AIふりかえり（この2週間）</h2>
       <div id="aiWeeklyTx" style="font-size:14px; line-height:1.8; color:#dbe6f5; white-space:pre-wrap;">ボタンを押すと、AIがログを読んで傾向と来週の作戦を教えてくれます。</div>
@@ -434,7 +450,7 @@
       <button class="btn danger" onclick="resetAll()">全データを消去</button>
       <div class="hint">データはこの端末のブラウザ内だけに保存されます。機種変更前に書き出しておくと安心です。</div>
     </div>
-    <div style="text-align:center; color:var(--muted); font-size:11px; margin-top:6px;">節酒アプリ v2.8 ・ 自分用</div>
+    <div style="text-align:center; color:var(--muted); font-size:11px; margin-top:6px;">節酒アプリ v2.9 ・ 自分用</div>
   </section>
 </div>
 
@@ -513,6 +529,8 @@
       <b>③</b> レジに直行 → まっすぐ帰る<br>
       <b>④</b> 家に着けば波は引く。あと10分の辛抱。
     </div>
+    <div style="font-size:12px; color:var(--sub); margin-bottom:6px;">🍹 どうしても寄るなら、買うのはこれ（飲む儀式は炭酸で代用できる）</div>
+    <div class="chips" id="konbiniAlt" style="margin-bottom:12px;"></div>
     <div style="text-align:center; font-size:13px; color:var(--sub); margin-bottom:12px;" id="sosSub"></div>
     <button class="btn zero" id="sosWinBtn" onclick="sosWin()">✊ 寄らずに帰る！</button>
     <div style="height:8px"></div>
@@ -539,6 +557,25 @@
   </div>
 </div>
 
+<!-- 眠りアシスト -->
+<div class="modal center" id="sleepModal">
+  <div class="sheet centered">
+    <h3>🌙 眠りアシスト</h3>
+    <div style="text-align:center; color:var(--sub); font-size:13px; margin-bottom:6px;">酒がなくても眠れる。丸の動きに合わせて呼吸。</div>
+    <div style="display:flex; flex-direction:column; align-items:center; gap:10px; margin:14px 0;">
+      <div id="breathCircle" style="width:150px; height:150px; border-radius:50%; background:radial-gradient(circle at 50% 40%,#6366f1,#1e1b4b); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:800; color:#fff; transform:scale(.55); transition:transform 1s ease-in-out;">準備</div>
+      <div id="breathCount" style="font-size:13px; color:var(--sub); min-height:18px;"></div>
+    </div>
+    <button class="btn urge" id="breathBtn" onclick="toggleBreath()">▶ 4-7-8呼吸を始める</button>
+    <div style="font-size:11px; color:var(--muted); text-align:center; margin-top:6px;">吸う4秒 → 止める7秒 → 吐く8秒。副交感神経が優位になり眠くなります。</div>
+    <div style="font-size:12px; color:var(--sub); margin:16px 0 8px;">寝る前ルーティン（できたらタップ）</div>
+    <div class="chips" id="sleepRoutine"></div>
+    <div style="font-size:11px; color:var(--muted); margin-top:10px; line-height:1.7;">💡 アルコールは寝つきは良くても睡眠を浅くします。飲まない夜の方が深く眠れることが多い——それを「朝チェックイン」で確かめてみて。</div>
+    <div style="height:12px"></div>
+    <button class="btn ghost" onclick="closeSleep()">閉じる</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -558,6 +595,7 @@ const PRESETS=[
 ];
 const TRIGGERS=['仕事のストレス','夕方の習慣','なんとなく','疲れた','付き合い','ごほうび'];
 const COPES=['炭酸水を飲む','熱いシャワー','10分だけ散歩','釣具の手入れ','歯を磨く','スマホでルアー物色','甘い物を食べる','早めに寝る'];
+const KONBINI_ALT=['ノンアルビール','強炭酸水','炭酸水＋レモン','無糖の炭酸','微糖コーヒー','お茶','ガム・タブレット','甘い炭酸(ご褒美)'];
 const SURF_MSGS=[
   'この波は必ず引く。飲みたさのピークは平均20分。今がその山だ。',
   'あと1本が、「毎日」を「隔日」に戻せなくする。1本の重さを思い出せ。',
@@ -876,6 +914,8 @@ function renderHome(){
 
   // 釣り
   renderFish();
+  // 朝チェックイン
+  renderMorning();
   // AI今日のひとこと（未設定なら非表示、当日キャッシュ済みならAPIを呼ばない）
   loadDailyAI(false);
 }
@@ -1019,17 +1059,19 @@ function rotMsg(){
 function closeSurf(){clearInterval(surfInt); clearInterval(surfMsgInt); document.getElementById('surfModal').classList.remove('show');}
 function surfWin(){
   D.surfWins=(D.surfWins||0)+1;
-  D.cravings.push({d:todayKey(), trigger:surfTrigger, survived:true});
+  D.cravings.push({d:todayKey(), h:new Date().getHours(), trigger:surfTrigger, survived:true});
   closeSurf(); toast('✊ 波を乗り切った！+1'); renderHome();
 }
 function surfGiveIn(){
-  D.cravings.push({d:todayKey(), trigger:surfTrigger, survived:false});
+  D.cravings.push({d:todayKey(), h:new Date().getHours(), trigger:surfTrigger, survived:false});
   save(); closeSurf(); openLog();
 }
 
 /* ============ 踏みとどまるモード（コンビニ・帰り道） ============ */
 function openSos(){
   rotFam(); sosSet('home');
+  const alt=document.getElementById('konbiniAlt'); alt.innerHTML='';
+  KONBINI_ALT.forEach(t=>{const c=document.createElement('div'); c.className='chip'; c.textContent=t; alt.appendChild(c);});
   document.getElementById('sosModal').classList.add('show');
 }
 function sosSet(mode){
@@ -1048,12 +1090,103 @@ function rotFam(){ famIdx++; document.getElementById('famMsg').textContent = FAM
 function closeSos(){document.getElementById('sosModal').classList.remove('show');}
 function sosWin(){
   D.surfWins=(D.surfWins||0)+1;
-  D.cravings.push({d:todayKey(), trigger:'コンビニ・帰り道', survived:true});
+  D.cravings.push({d:todayKey(), h:new Date().getHours(), trigger:'コンビニ・帰り道', survived:true});
   save(); closeSos(); toast('✊ よく踏みとどまった！ 家族に胸を張れる'); renderHome();
 }
 function sosGiveIn(){
-  D.cravings.push({d:todayKey(), trigger:'コンビニ・帰り道', survived:false});
+  D.cravings.push({d:todayKey(), h:new Date().getHours(), trigger:'コンビニ・帰り道', survived:false});
   save(); closeSos(); openLog();
+}
+
+/* ============ 眠りアシスト（4-7-8呼吸） ============ */
+const BPHASES=[['吸う',4],['止める',7],['吐く',8]];
+let breathOn=false, breathTO=null, breathTick=null;
+function openSleep(){
+  const r=document.getElementById('sleepRoutine'); r.innerHTML='';
+  ['湯船で温まった','カフェイン切った','スマホを置く','部屋を暗く','炭酸水を飲んだ','軽くストレッチ'].forEach(t=>{
+    const c=document.createElement('div'); c.className='chip'; c.textContent=t; c.onclick=()=>c.classList.toggle('on'); r.appendChild(c);});
+  stopBreath(); document.getElementById('sleepModal').classList.add('show');
+}
+function closeSleep(){ stopBreath(); document.getElementById('sleepModal').classList.remove('show'); }
+function toggleBreath(){ if(breathOn){stopBreath();return;} breathOn=true; document.getElementById('breathBtn').textContent='■ 止める'; runPhase(0); }
+function runPhase(i){
+  if(!breathOn) return;
+  const ph=BPHASES[i%3], label=ph[0], sec=ph[1];
+  const c=document.getElementById('breathCircle');
+  c.style.transitionDuration=sec+'s';
+  if(label==='吸う') c.style.transform='scale(1)';
+  else if(label==='吐く') c.style.transform='scale(.55)';
+  c.textContent=label;
+  let n=sec; document.getElementById('breathCount').textContent=n+'秒';
+  clearInterval(breathTick);
+  breathTick=setInterval(()=>{ n--; document.getElementById('breathCount').textContent=(n>0?n:0)+'秒'; if(n<=0)clearInterval(breathTick); },1000);
+  breathTO=setTimeout(()=>runPhase(i+1), sec*1000);
+}
+function stopBreath(){
+  breathOn=false; clearTimeout(breathTO); clearInterval(breathTick);
+  const c=document.getElementById('breathCircle'); if(c){c.style.transitionDuration='1s'; c.style.transform='scale(.55)'; c.textContent='準備';}
+  const b=document.getElementById('breathBtn'); if(b)b.textContent='▶ 4-7-8呼吸を始める';
+  const cn=document.getElementById('breathCount'); if(cn)cn.textContent='';
+}
+
+/* ============ 朝チェックイン（睡眠・体調） ============ */
+const SLEEP_OPTS=[['ぐっすり',3],['まあまあ',2],['眠れず',1]];
+const MOOD_OPTS=[['すっきり',3],['普通',2],['だるい',1]];
+function renderMorning(){
+  const card=document.getElementById('morningCard');
+  const k=todayKey(); const o=D.days[k]||{};
+  const hour=new Date().getHours();
+  // 朝〜昼で、まだ両方未記録なら表示
+  if(hour>=14 || (o.sleep && o.mood)){ card.style.display='none'; return; }
+  card.style.display='block';
+  const sp=document.getElementById('sleepPick'); sp.innerHTML='';
+  SLEEP_OPTS.forEach(([lb,v])=>{const c=document.createElement('div');c.className='chip'+(o.sleep===v?' on':'');c.textContent=lb;
+    c.onclick=()=>{dayObj(k).sleep=v; save(); renderMorning();}; sp.appendChild(c);});
+  const mp=document.getElementById('moodPick'); mp.innerHTML='';
+  MOOD_OPTS.forEach(([lb,v])=>{const c=document.createElement('div');c.className='chip'+(o.mood===v?' on':'');c.textContent=lb;
+    c.onclick=()=>{dayObj(k).mood=v; save(); renderMorning();}; mp.appendChild(c);});
+}
+
+/* ============ 傾向分析 ============ */
+function renderInsight(){
+  const body=document.getElementById('insightBody');
+  const now=new Date(); const rows=[];
+  // 睡眠・体調 × 前夜の飲酒
+  const grp={drink:{s:[],m:[]}, sober:{s:[],m:[]}};
+  for(const k in D.days){
+    const o=D.days[k]; if(!o)continue;
+    const prev=new Date(k+'T00:00:00'); prev.setDate(prev.getDate()-1);
+    const drankPrev=hasDrinks(todayKey(prev));
+    const g=drankPrev?grp.drink:grp.sober;
+    if(o.sleep) g.s.push(o.sleep);
+    if(o.mood) g.m.push(o.mood);
+  }
+  const avg=a=>a.length?(a.reduce((x,y)=>x+y,0)/a.length):null;
+  const star=v=>v==null?'—':'★'.repeat(Math.round(v))+'☆'.repeat(3-Math.round(v))+' ('+v.toFixed(1)+')';
+  const sD=avg(grp.drink.s), sS=avg(grp.sober.s);
+  if(sD!=null||sS!=null){
+    rows.push('😴 <b>眠りの質</b>（3段階）');
+    rows.push('　飲んだ翌朝：'+star(sD));
+    rows.push('　飲まない翌朝：'+star(sS));
+    if(sD!=null&&sS!=null&&sS>sD) rows.push('　→ <span style="color:var(--green)">飲まない夜の方がよく眠れています。データが証明。</span>');
+  }
+  const mD=avg(grp.drink.m), mS=avg(grp.sober.m);
+  if(mD!=null||mS!=null){
+    rows.push('<br>🌅 <b>朝の体調</b>');
+    rows.push('　飲んだ翌朝：'+star(mD));
+    rows.push('　飲まない翌朝：'+star(mS));
+  }
+  // 引き金TOP3
+  const tc={};(D.cravings||[]).forEach(c=>{if(c.trigger)tc[c.trigger]=(tc[c.trigger]||0)+1;});
+  const top=Object.entries(tc).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  if(top.length){ rows.push('<br>🎯 <b>飲みたくなる引き金 TOP'+top.length+'</b>'); top.forEach(([t,n],i)=>rows.push('　'+(i+1)+'. '+t+'（'+n+'回）')); }
+  // 飲みたい時間帯
+  const hrs=(D.cravings||[]).map(c=>c.h).filter(h=>h!=null);
+  if(hrs.length>=2){ const buckets={}; hrs.forEach(h=>{const b=Math.floor(h/3)*3; buckets[b]=(buckets[b]||0)+1;});
+    const peak=Object.entries(buckets).sort((a,b)=>b[1]-a[1])[0];
+    rows.push('<br>⏰ <b>魔の時間帯</b>：'+peak[0]+'〜'+(+peak[0]+3)+'時が最多（'+peak[1]+'回）');
+  }
+  body.innerHTML = rows.length? rows.join('<br>') : '朝チェックインや「飲みたい波」の記録がたまると、ここに睡眠・体調・引き金の傾向が出ます。まずは数日つけてみて。';
 }
 
 /* ============ カレンダー ============ */
@@ -1133,6 +1266,7 @@ function renderStats(){
   document.getElementById('avg30').textContent=Math.round(avgLast(30))+'g';
   document.getElementById('rate30').textContent=Math.round(zeroRate(30))+'%';
   document.getElementById('surfWins').textContent=(D.surfWins||0);
+  renderInsight();
 }
 function countAllZero(){let n=0;for(const k in D.days){if(isZeroDay(k))n++;}return n;}
 function avgLast(n){let s=0;const now=new Date();for(let i=0;i<n;i++){const d=new Date(now);d.setDate(now.getDate()-i);s+=dayTotalG(todayKey(d));}return s/n;}
