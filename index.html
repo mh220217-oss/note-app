@@ -461,7 +461,7 @@
       <button class="btn danger" onclick="resetAll()">全データを消去</button>
       <div class="hint">データはこの端末のブラウザ内だけに保存されます。機種変更前に書き出しておくと安心です。</div>
     </div>
-    <div style="text-align:center; color:var(--muted); font-size:11px; margin-top:6px;">節酒アプリ v3.8 ・ 自分用</div>
+    <div style="text-align:center; color:var(--muted); font-size:11px; margin-top:6px;">節酒アプリ v3.9 ・ 自分用</div>
   </section>
 </div>
 
@@ -825,7 +825,7 @@ async function updatePersona(){
   const usr='【現在のメモ】\n'+(D.persona||'(まだ空です)')+'\n\n【会話】\n'+recent;
   try{
     const r=await callAI(sys,[{role:'user',text:usr}]);
-    if(r && r.trim().length>3){ D.persona=r.trim().slice(0,3500); D.personaSince=0; save(); }
+    if(r && r.trim().length>3){ D.persona=r.trim().slice(0,8000); D.personaSince=0; save(); }
   }catch(e){ /* 失敗時は次回に持ち越し */ }
   personaBusy=false;
 }
@@ -1454,7 +1454,7 @@ document.querySelectorAll('#planSeg button').forEach(b=>{b.onclick=()=>{D.plan=b
     const npv=document.getElementById('setAiProvider').value, nkey=cleanKey(document.getElementById('setAiKey').value);
     if(npv!==D.aiProvider||nkey!==D.aiKey){ D.aiGeminiModel=''; D.aiDaily=null; } // キー変更で選び直し
     D.aiProvider=npv; D.aiKey=nkey;
-    D.persona=document.getElementById('setPersona').value.slice(0,3500);
+    D.persona=document.getElementById('setPersona').value.slice(0,8000);
     save(); toast('保存しました'); if(id==='setFish'||id==='setAiProvider'||id==='setAiKey')renderHome();
   });
 });
