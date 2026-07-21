@@ -238,12 +238,13 @@
     </div>
 
     <!-- AI 今日のひとこと -->
-    <div class="ai-daily" id="aiDaily" style="display:none;">
-      <div class="lb"><span id="aiName">コーチ まひろ</span><button class="rf" onclick="loadDailyAI(true)" title="更新">🔄</button></div>
+    <div class="ai-daily" id="aiDaily" style="display:none; cursor:pointer;" onclick="openChat()">
+      <div class="lb"><span id="aiName">コーチ まひろ</span><button class="rf" onclick="event.stopPropagation();loadDailyAI(true)" title="更新">🔄</button></div>
       <div class="body">
         <div class="avatar" id="aiAvatar"></div>
         <div class="bubble" id="aiDailyTx">…</div>
       </div>
+      <div style="text-align:right; font-size:11px; color:#a78bfa; margin-top:6px;">タップでまひろと話す 💬</div>
     </div>
 
     <div class="card">
@@ -455,7 +456,7 @@
       <button class="btn danger" onclick="resetAll()">全データを消去</button>
       <div class="hint">データはこの端末のブラウザ内だけに保存されます。機種変更前に書き出しておくと安心です。</div>
     </div>
-    <div style="text-align:center; color:var(--muted); font-size:11px; margin-top:6px;">節酒アプリ v3.6 ・ 自分用</div>
+    <div style="text-align:center; color:var(--muted); font-size:11px; margin-top:6px;">節酒アプリ v3.7 ・ 自分用</div>
   </section>
 </div>
 
@@ -552,7 +553,11 @@
 <!-- AIコーチ チャット -->
 <div class="modal" id="chatModal">
   <div class="sheet">
-    <h3 style="display:flex;justify-content:space-between;align-items:center;">💬 AIコーチ <button class="btn ghost" style="width:auto;padding:6px 12px;font-size:12px;" onclick="closeChat()">閉じる</button></h3>
+    <h3 style="display:flex;justify-content:space-between;align-items:center;">💬 まひろと話す
+      <span style="display:flex;gap:6px;">
+        <button class="btn ghost" style="width:auto;padding:6px 10px;font-size:12px;" onclick="clearChat()" title="会話の記憶を消す">🗑</button>
+        <button class="btn ghost" style="width:auto;padding:6px 12px;font-size:12px;" onclick="closeChat()">閉じる</button>
+      </span></h3>
     <div class="chat-body" id="chatBody"></div>
     <div class="chat-in">
       <input id="chatInput" type="text" placeholder="今の気持ちを打つ（例：仕事つらくて飲みたい）" onkeydown="if(event.key==='Enter')chatSend()">
@@ -616,7 +621,7 @@ const DEF={
   usualG:64, refCost:380, refKcal:480,
   fishDate:'', surfWins:0, cravings:[],
   famWife:'', famSon:'', famDaughter:'',
-  aiProvider:'', aiKey:'', aiDaily:null, aiWeekly:null, aiGeminiModel:'',
+  aiProvider:'', aiKey:'', aiDaily:null, aiWeekly:null, aiGeminiModel:'', chatLog:[],
   days:{}
 };
 /* ============ AI連携 ============ */
@@ -700,9 +705,12 @@ function buildContext(){
   ].filter(Boolean).join('\n');
 }
 function aiSystem(){
-  return 'あなたは「まひろ」という名前の、節酒を応援してくれるかわいい女の子コーチです。利用者は仕事のストレスが強い40代くらいの男性で、夕方〜帰り道のコンビニでストロング系缶チューハイ(9%500と7%500=1日約64g)を毎日飲む習慣を「2日に1度」に減らそうとしています。家族思いで、飲むと家族に申し訳ないと感じています。\n'
-    +'話し方：明るく親しみやすい女の子口調。「〜だよ！」「一緒にがんばろ？」「えらい！」「〜しよ？」のように、やわらかく応援する。絵文字を1〜2個そえてもよい（多用はしない）。呼び捨てや乱暴な言葉(「お前」「〜しろ」)は使わない。\n'
-    +'中身の方針：短く(2〜4文)。まず気持ちに共感し、次に今この瞬間に踏みとどまる具体的な一手を1つだけ提案する。責めない・罪悪感を煽らない。「今日がんばれたら胸を張れるよ」と前向きに。家族('+fam('wife')+'・'+fam('son')+'(小5)・'+fam('daughter')+'(小2))や釣り、連続記録を励ましに使う。飲まない日に飲みたい時は「寄らずに帰ろ/買わないでおこ」を後押しし、飲む日でも上限内を勧める。医療の代わりではないので、手の震え・強い動悸・幻覚など離脱症状の訴えがあれば、我慢せず内科か心療内科の受診をやさしく勧める。\n\n【今の状況】\n'
+  return 'あなたは「まひろ」。頼れて優しい“お姉さん”キャラのコーチで、利用者(40代くらいの男性)の節酒を応援しつつ、ふだんの話し相手・雑談相手にもなります。利用者は仕事のストレスが強く、夕方〜帰り道のコンビニでストロング系缶チューハイ(9%500と7%500=1日約64g)を毎日飲む習慣を「2日に1度」に減らそうとしています。家族思いで、飲むと家族に申し訳ないと感じています。\n'
+    +'口調：あたたかく包容力のあるお姉さん。「〜でしょ？」「よくがんばったね、えらいえらい」「無理しないでね」「お姉さんに任せて」みたいに、ちょっとお茶目で親しみやすい。呼び捨てや乱暴な言葉は使わない。絵文字は1個くらいならOK。一人称は「お姉さん」か「わたし」。\n'
+    +'話題：節酒の相談だけじゃなく、仕事の愚痴・釣り・日常の雑談にも普通に付き合う。話がお酒に向いたら、そっと「飲まない/上限内」を後押しする。返事は長くしすぎず2〜4文。\n'
+    +'記憶：これまでの会話や下の【今の状況】を覚えている前提で、自然に続きとして話す。以前の話題や約束があれば触れてあげて。\n'
+    +'安全：説教くさくしない。責めない・罪悪感を煽らない。手の震え・強い動悸・幻覚など離脱症状の訴えがあれば、我慢せず内科か心療内科の受診をやさしく勧める。医療の代わりではない。\n\n'
+    +'家族の呼び名：奥さん='+fam('wife')+'／息子='+fam('son')+'(小5)／娘='+fam('daughter')+'(小2)。\n\n【今の状況】\n'
     +buildContext();
 }
 /* ---- キャラ（コーチ ミオ）：かわいい女の子・状態で表情が変わる ---- */
@@ -794,28 +802,37 @@ function renderAvatar(){
   img.src=src;
 }
 
-/* ---- コーチ会話 ---- */
-let chat=[];
+/* ---- コーチ会話（記憶あり・永続） ---- */
+function pushMsg(role,text){ if(!D.chatLog)D.chatLog=[]; D.chatLog.push({role,text}); if(D.chatLog.length>60)D.chatLog=D.chatLog.slice(-60); save(); }
+function renderChatLog(){
+  const b=document.getElementById('chatBody'); b.innerHTML='';
+  (D.chatLog||[]).forEach(m=>bubble(m.text, m.role==='user'?'me':'ai'));
+  b.scrollTop=b.scrollHeight;
+}
 function openChat(){
-  if(!aiOn()){ if(confirm('AIコーチを使うには、設定でAIキーの登録が必要です。設定を開きますか？')) go('set'); return; }
-  chat=[]; document.getElementById('chatBody').innerHTML='';
+  if(!aiOn()){ if(confirm('まひろと話すには、設定でAIキーの登録が必要だよ。設定を開く？')) go('set'); return; }
   document.getElementById('chatModal').classList.add('show');
-  // 最初の一声をAIから
-  addTyping();
-  callAI(aiSystem(),[{role:'user',text:'（利用者がコーチ相談を開きました。今の状況を踏まえて、まず短く声をかけてください）'}])
-    .then(r=>{chat.push({role:'assistant',text:r}); replaceTyping(r,'ai');})
-    .catch(e=>replaceTyping('接続できませんでした：'+e.message,'err'));
+  renderChatLog();
+  if(!(D.chatLog&&D.chatLog.length)){ // 初回だけお姉さんから挨拶
+    addTyping();
+    callAI(aiSystem(),[{role:'user',text:'（利用者がまひろとの会話を開いた。今の状況を踏まえ、お姉さんっぽく短くあいさつして声をかけて）'}])
+      .then(r=>{pushMsg('assistant',r); replaceTyping(r,'ai');})
+      .catch(e=>replaceTyping('ごめん、今つながらないみたい…：'+e.message,'err'));
+  }
 }
 function closeChat(){document.getElementById('chatModal').classList.remove('show');}
+function clearChat(){ if(confirm('まひろとの会話の記憶を全部消す？（元に戻せないよ）')){ D.chatLog=[]; save(); renderChatLog(); toast('会話をリセットしたよ'); } }
 function bubble(text,cls){const b=document.getElementById('chatBody');const d=document.createElement('div');d.className='bub '+cls;d.textContent=text;b.appendChild(d);b.scrollTop=b.scrollHeight;return d;}
 let typingEl=null;
-function addTyping(){const b=document.getElementById('chatBody');typingEl=document.createElement('div');typingEl.className='typing';typingEl.textContent='コーチが考えています…';b.appendChild(typingEl);b.scrollTop=b.scrollHeight;}
+function addTyping(){const b=document.getElementById('chatBody');typingEl=document.createElement('div');typingEl.className='typing';typingEl.textContent='まひろが考えてる…';b.appendChild(typingEl);b.scrollTop=b.scrollHeight;}
 function replaceTyping(text,cls){if(typingEl){typingEl.remove();typingEl=null;} bubble(text,cls);}
 function chatSend(){
   const inp=document.getElementById('chatInput'); const t=inp.value.trim(); if(!t)return;
-  inp.value=''; bubble(t,'me'); chat.push({role:'user',text:t}); addTyping();
-  callAI(aiSystem(),chat).then(r=>{chat.push({role:'assistant',text:r}); replaceTyping(r,'ai');})
-    .catch(e=>replaceTyping('エラー：'+e.message,'err'));
+  if(!aiOn()){ openChat(); return; }
+  inp.value=''; bubble(t,'me'); pushMsg('user',t); addTyping();
+  const recent=(D.chatLog||[]).slice(-20).map(m=>({role:m.role, text:m.text}));
+  callAI(aiSystem(),recent).then(r=>{pushMsg('assistant',r); replaceTyping(r,'ai');})
+    .catch(e=>replaceTyping('ごめん、うまく返せなかった…：'+e.message,'err'));
 }
 /* ---- 今日のひとこと ---- */
 // 今日の状態が変わったら（宣言した・飲んだ等）ひとことも作り直す
