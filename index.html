@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f172a">
+<title>隔日チャレンジ</title>
+<style>
+  :root{
+    --bg:#0b1220; --card:#161f33; --card2:#1f2b45; --line:#2c3a58;
+    --txt:#e6edf7; --sub:#94a3b8; --muted:#64748b;
+    --accent:#22d3ee; --accent2:#0891b2;
+    --green:#34d399; --yellow:#fbbf24; --red:#f5544e; --amber:#f59e0b; --pink:#fb7185;
+    --safe-b: env(safe-area-inset-bottom, 0px);
+    --safe-t: env(safe-area-inset-top, 0px);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+    background:var(--bg); color:var(--txt);
+    padding-top:var(--safe-t);
+    padding-bottom:calc(64px + var(--safe-b));
+    min-height:100vh; line-height:1.5; -webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:520px; margin:0 auto; padding:12px 14px 30px;}
+  h1{font-size:18px; margin:6px 4px 12px; font-weight:800; letter-spacing:.02em; display:flex; align-items:center; gap:8px;}
+  h1 .sub{font-size:11px; color:var(--sub); font-weight:500;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px; margin-bottom:12px;}
+  .card h2{font-size:12px; color:var(--sub); margin:0 0 12px; font-weight:700; letter-spacing:.06em;}
+
+  /* 今日の判定バナー */
+  .verdict{border-radius:16px; padding:16px; margin-bottom:12px; border:1.5px solid;}
+  .verdict.rest{background:linear-gradient(135deg,rgba(52,211,153,.14),rgba(8,145,178,.10)); border-color:var(--green);}
+  .verdict.ok{background:rgba(251,191,36,.10); border-color:var(--yellow);}
+  .verdict.fail{background:rgba(245,84,78,.12); border-color:var(--red);}
+  .verdict .tag{font-size:12px; font-weight:800; letter-spacing:.1em;}
+  .verdict .big{font-size:26px; font-weight:900; margin:4px 0 2px; line-height:1.2;}
+  .verdict .msg{font-size:13px; color:var(--sub);}
+
+  /* 夕方アラート */
+  .danger{background:linear-gradient(135deg,#3a1116,#2a0e14); border:1.5px solid var(--red); border-radius:16px; padding:16px; margin-bottom:12px; animation:pulse 2.2s infinite;}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(245,84,78,.35);}50%{box-shadow:0 0 0 8px rgba(245,84,78,0);}}
+  .danger .t{font-size:16px; font-weight:900; color:#ffb3b0;}
+  .danger .s{font-size:13px; color:#f0c7c5; margin:6px 0 12px;}
+
+  .today-num{display:flex; align-items:flex-end; gap:6px; margin:6px 0 4px;}
+  .today-num .big{font-size:40px; font-weight:900; line-height:1;}
+  .today-num .unit{font-size:14px; color:var(--sub); margin-bottom:5px;}
+  .bar{height:11px; border-radius:8px; background:var(--card2); overflow:hidden;}
+  .bar > i{display:block; height:100%; border-radius:8px; transition:width .4s ease, background .3s;}
+  .bar-cap{display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-top:6px;}
+
+  .stat-row{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px;}
+  .stat{background:var(--card2); border-radius:12px; padding:12px;}
+  .stat .k{font-size:11px; color:var(--sub);}
+  .stat .v{font-size:22px; font-weight:900; margin-top:2px;}
+  .stat .v small{font-size:12px; font-weight:600; color:var(--sub); margin-left:3px;}
+  .stat .warn{color:var(--red);}
+
+  .btn{border:none; border-radius:12px; padding:14px; font-size:15px; font-weight:800; cursor:pointer; width:100%; color:#04121a;}
+  .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2)); box-shadow:0 4px 14px rgba(34,211,238,.25);}
+  .btn.ghost{background:var(--card2); color:var(--txt); border:1px solid var(--line);}
+  .btn.zero{background:linear-gradient(135deg,var(--green),#0f9d67); color:#04121a;}
+  .btn.urge{background:linear-gradient(135deg,#6366f1,#4338ca); color:#fff;}
+  .btn.drink{background:transparent; color:var(--muted); border:1px solid var(--line);}
+  .btn.danger{background:transparent; color:var(--red); border:1px solid var(--red);}
+  .btn:active{transform:scale(.98);}
+
+  .quick-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px;}
+  .qbtn{background:var(--card2); border:1px solid var(--line); border-radius:12px; padding:10px 6px; text-align:center; cursor:pointer; font-size:11px; color:var(--txt);}
+  .qbtn:active{transform:scale(.96); border-color:var(--accent);}
+  .qbtn .em{font-size:20px; display:block; margin-bottom:2px;}
+  .qbtn .g{font-size:10px; color:var(--sub); display:block;}
+
+  .log-item{display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--line);}
+  .log-item:last-child{border-bottom:none;}
+  .log-item .em{font-size:22px;}
+  .log-item .info{flex:1; min-width:0;}
+  .log-item .info .n{font-size:14px; font-weight:600;}
+  .log-item .info .d{font-size:11px; color:var(--sub);}
+  .log-item .del{color:var(--muted); font-size:18px; padding:4px 8px; cursor:pointer;}
+  .empty{color:var(--muted); font-size:13px; text-align:center; padding:14px 0;}
+
+  /* 釣りカウントダウン */
+  .fish{display:flex; align-items:center; gap:12px; background:linear-gradient(135deg,#0e2a3a,#0b1f2e); border:1px solid #1e4257; border-radius:14px; padding:12px 14px; margin-bottom:12px;}
+  .fish .em{font-size:28px;}
+  .fish .d{flex:1;}
+  .fish .d .t{font-size:13px; font-weight:800; color:#7dd3fc;}
+  .fish .d .s{font-size:11px; color:var(--sub);}
+  .fish .num{font-size:26px; font-weight:900; color:#7dd3fc;}
+  .fish .num small{font-size:12px; color:var(--sub);}
+
+  /* カレンダー */
+  .cal-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;}
+  .cal-head button{background:var(--card2); border:1px solid var(--line); color:var(--txt); border-radius:10px; width:38px; height:38px; font-size:18px; cursor:pointer;}
+  .cal-head .m{font-size:16px; font-weight:800;}
+  .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:5px;}
+  .cal-grid .wd{text-align:center; font-size:11px; color:var(--sub); padding:2px 0;}
+  .cell{aspect-ratio:1; border-radius:9px; background:var(--card2); display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:12px; position:relative; cursor:pointer; border:1px solid transparent;}
+  .cell.blank{background:transparent; cursor:default;}
+  .cell.today{border-color:var(--accent);}
+  .cell .dg{font-size:9px; margin-top:1px; opacity:.9;}
+  .cell.zero{background:rgba(52,211,153,.20); color:var(--green);}
+  .cell.ok{background:rgba(251,191,36,.16); color:var(--yellow);}
+  .cell.over{background:rgba(245,84,78,.22); color:#ff9a97;}
+  .cal-legend{display:flex; gap:14px; justify-content:center; margin-top:14px; font-size:11px; color:var(--sub); flex-wrap:wrap;}
+  .cal-legend i{display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:4px; vertical-align:-1px;}
+
+  .chart{display:flex; align-items:flex-end; gap:7px; height:150px; margin-top:6px; padding-top:10px;}
+  .chart .col{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; gap:4px;}
+  .chart .col .bcol{width:72%; background:linear-gradient(180deg,var(--accent),var(--accent2)); border-radius:5px 5px 0 0; min-height:2px; transition:height .4s;}
+  .chart .col .bcol.over{background:linear-gradient(180deg,var(--red),#c0342f);}
+  .chart .col .lb{font-size:9px; color:var(--sub);}
+  .chart .col .vv{font-size:9px; color:var(--sub);}
+
+  .save-stat{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; text-align:center;}
+  .save-stat .b{background:var(--card2); border-radius:12px; padding:12px 4px;}
+  .save-stat .b .v{font-size:19px; font-weight:900;}
+  .save-stat .b .k{font-size:10px; color:var(--sub); margin-top:2px;}
+
+  /* 恐怖：このまま毎日だと */
+  .fear{background:linear-gradient(135deg,#2a0e14,#1a0a10); border:1.5px solid var(--red); border-radius:16px; padding:16px; margin-bottom:12px;}
+  .fear h2{color:#ff9a97;}
+  .fear .row{display:flex; justify-content:space-between; align-items:baseline; padding:8px 0; border-bottom:1px dashed #40202a; font-size:14px;}
+  .fear .row:last-child{border-bottom:none;}
+  .fear .row .v{font-weight:900; color:#ffb3b0; font-size:17px;}
+  .fear .lead{font-size:12px; color:#e6b8b6; margin:2px 0 10px;}
+
+  .field{margin-bottom:16px;}
+  .field label{display:block; font-size:13px; color:var(--sub); margin-bottom:6px;}
+  .field input, .field select{width:100%; background:var(--card2); border:1px solid var(--line); border-radius:10px; padding:12px; color:var(--txt); font-size:16px;}
+  .seg{display:flex; gap:6px; background:var(--card2); border-radius:12px; padding:4px;}
+  .seg button{flex:1; border:none; background:transparent; color:var(--sub); padding:10px; border-radius:9px; font-size:14px; font-weight:700; cursor:pointer;}
+  .seg button.on{background:var(--accent); color:#04121a;}
+  .hint{font-size:11px; color:var(--muted); margin-top:6px; line-height:1.6;}
+  .note{background:rgba(34,211,238,.06); border:1px solid #1e4257; border-radius:12px; padding:12px; font-size:12px; color:#a7c7d6; line-height:1.7;}
+
+  .nav{position:fixed; left:0; right:0; bottom:0; background:rgba(11,18,32,.94); backdrop-filter:blur(10px); border-top:1px solid var(--line); display:flex; padding-bottom:var(--safe-b); z-index:40;}
+  .nav a{flex:1; text-align:center; padding:9px 0 7px; color:var(--muted); font-size:10px; text-decoration:none; cursor:pointer;}
+  .nav a .ic{font-size:20px; display:block; line-height:1.1;}
+  .nav a.on{color:var(--accent);}
+
+  .modal{position:fixed; inset:0; background:rgba(0,0,0,.72); z-index:60; display:none; align-items:flex-end; justify-content:center;}
+  .modal.show{display:flex;}
+  .modal.center{align-items:center; padding:16px;}
+  .sheet{background:var(--card); width:100%; max-width:520px; border-radius:20px 20px 0 0; padding:18px 16px calc(20px + var(--safe-b)); max-height:90vh; overflow:auto; animation:up .25s ease;}
+  .sheet.centered{border-radius:20px; max-height:92vh;}
+  @keyframes up{from{transform:translateY(30px); opacity:.4;} to{transform:translateY(0); opacity:1;}}
+  .sheet h3{margin:0 0 14px; font-size:16px;}
+  .mrow{display:flex; gap:8px; margin-bottom:10px;}
+  .mrow > *{flex:1;}
+  .counter{display:flex; align-items:center; gap:14px; justify-content:center; margin:14px 0;}
+  .counter button{width:52px; height:52px; border-radius:50%; border:1px solid var(--line); background:var(--card2); color:var(--txt); font-size:26px; cursor:pointer;}
+  .counter .num{font-size:34px; font-weight:900; min-width:44px; text-align:center;}
+  .plist{display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-bottom:14px;}
+  .pcard{background:var(--card2); border:1px solid var(--line); border-radius:12px; padding:10px; cursor:pointer; display:flex; align-items:center; gap:8px;}
+  .pcard.on{border-color:var(--accent); background:rgba(34,211,238,.10);}
+  .pcard .em{font-size:20px;}
+  .pcard .t{font-size:12px; font-weight:700;}
+  .pcard .s{font-size:10px; color:var(--sub);}
+
+  /* 波乗りタイマー */
+  .surf-time{font-size:52px; font-weight:900; text-align:center; letter-spacing:.04em; margin:6px 0;}
+  .surf-msg{background:var(--card2); border-radius:14px; padding:16px; text-align:center; font-size:15px; font-weight:700; line-height:1.7; min-height:96px; display:flex; align-items:center; justify-content:center; color:#dbe6f5;}
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin:14px 0;}
+  .chip{background:var(--card2); border:1px solid var(--line); border-radius:20px; padding:8px 12px; font-size:12px; cursor:pointer;}
+  .chip.on{border-color:var(--accent); background:rgba(34,211,238,.12); color:var(--accent);}
+
+  .toast{position:fixed; left:50%; bottom:calc(80px + var(--safe-b)); transform:translateX(-50%); background:var(--green); color:#04121a; padding:10px 18px; border-radius:20px; font-size:13px; font-weight:800; z-index:80; opacity:0; transition:opacity .3s; pointer-events:none; text-align:center;}
+  .toast.show{opacity:1;}
+  .page{display:none;}
+  .page.on{display:block;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🎯 隔日チャレンジ <span class="sub" id="modeLabel"></span></h1>
+
+  <!-- ============ ホーム ============ -->
+  <section class="page on" id="page-home">
+
+    <!-- 釣りカウントダウン -->
+    <div class="fish" id="fishBox" style="display:none;" onclick="go('set')">
+      <span class="em">🎣</span>
+      <div class="d"><div class="t" id="fishTitle">次の釣行</div><div class="s" id="fishSub"></div></div>
+      <div class="num" id="fishNum"></div>
+    </div>
+
+    <!-- 今日の判定 -->
+    <div class="verdict rest" id="verdict">
+      <div class="tag" id="vTag">今日の予定</div>
+      <div class="big" id="vBig">－</div>
+      <div class="msg" id="vMsg"></div>
+    </div>
+
+    <!-- 夕方の魔の時間アラート -->
+    <div class="danger" id="dangerBox" style="display:none;">
+      <div class="t" id="dangerT">⚠️ 魔の時間帯</div>
+      <div class="s" id="dangerS"></div>
+      <button class="btn urge" onclick="openSurf()">🌊 飲みたい波が来た（20分だけ耐える）</button>
+      <div style="height:8px"></div>
+      <button class="btn zero" onclick="markZero()">✊ 今日は飲まずに乗り切る</button>
+    </div>
+
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:baseline;">
+        <h2 id="todayDateLabel" style="margin:0;">今日</h2>
+        <span style="font-size:11px; color:var(--muted);" id="nowClock"></span>
+      </div>
+      <div class="today-num">
+        <span class="big" id="todayG">0</span>
+        <span class="unit">g（純アルコール）</span>
+      </div>
+      <div class="bar"><i id="todayBar" style="width:0%"></i></div>
+      <div class="bar-cap"><span>0</span><span id="limitCap"></span></div>
+
+      <div class="stat-row">
+        <div class="stat"><div class="k">🔥 連続 飲まない日</div><div class="v" id="streak">0<small>日</small></div></div>
+        <div class="stat"><div class="k">🗓 今週の休肝日</div><div class="v" id="weekRest">0<small id="weekRestTgt">/3</small></div></div>
+      </div>
+      <div class="hint" id="streakWarn"></div>
+    </div>
+
+    <div class="card">
+      <button class="btn zero" id="zeroBtn" onclick="markZero()">✊ 今日は飲まなかった（休肝日にする）</button>
+      <div style="height:10px"></div>
+      <button class="btn urge" onclick="openSurf()">🌊 飲みたい…（20分やり過ごす）</button>
+      <div style="height:10px"></div>
+      <button class="btn drink" onclick="openLog()">😔 飲んだものを記録する</button>
+      <div class="quick-grid" id="quickGrid"></div>
+    </div>
+
+    <div class="card">
+      <h2>今日の記録</h2>
+      <div id="todayLog"><div class="empty">まだ記録がありません</div></div>
+    </div>
+  </section>
+
+  <!-- ============ カレンダー ============ -->
+  <section class="page" id="page-cal">
+    <div class="card">
+      <div class="cal-head">
+        <button onclick="calMove(-1)">‹</button>
+        <div class="m" id="calMonth"></div>
+        <button onclick="calMove(1)">›</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-legend">
+        <span><i style="background:var(--green)"></i>飲まない日</span>
+        <span><i style="background:var(--yellow)"></i>上限内</span>
+        <span><i style="background:var(--red)"></i>飲みすぎ</span>
+      </div>
+    </div>
+    <div class="card">
+      <h2 id="monthSumLabel">今月</h2>
+      <div class="save-stat">
+        <div class="b"><div class="v" style="color:var(--green)" id="mZero">0</div><div class="k">飲まない日</div></div>
+        <div class="b"><div class="v" id="mDrink">0</div><div class="k">飲んだ日</div></div>
+        <div class="b"><div class="v" style="color:var(--red)" id="mOver">0</div><div class="k">飲みすぎた日</div></div>
+      </div>
+      <div class="hint" id="altProgress"></div>
+    </div>
+  </section>
+
+  <!-- ============ 記録・恐怖 ============ -->
+  <section class="page" id="page-stats">
+    <div class="fear card" id="fearCard">
+      <h2>⚠️ このまま毎日飲み続けると、1年で</h2>
+      <div class="lead" id="fearLead"></div>
+      <div class="row"><span>飲む純アルコール</span><span class="v" id="fAlc">-</span></div>
+      <div class="row"><span>酒代（消えるお金）</span><span class="v" id="fMoney">-</span></div>
+      <div class="row"><span>アルコールのカロリー</span><span class="v" id="fKcal">-</span></div>
+      <div class="row"><span>飲む缶の本数</span><span class="v" id="fCans">-</span></div>
+      <div class="hint" style="color:#e6b8b6; margin-top:10px;" id="fearFoot"></div>
+    </div>
+
+    <div class="card">
+      <h2>💪 隔日にできれば、1年で取り戻せるもの</h2>
+      <div class="save-stat">
+        <div class="b"><div class="v" style="color:var(--green)" id="gMoney">¥0</div><div class="k">財布に残る</div></div>
+        <div class="b"><div class="v" style="color:var(--yellow)" id="gKcal">0</div><div class="k">減らせるkcal</div></div>
+        <div class="b"><div class="v" style="color:var(--accent)" id="gDays">0</div><div class="k">増える休肝日</div></div>
+      </div>
+      <div class="hint">「毎日」と「2日に1度」の差。半分に減らせれば、これだけ体とお金に返ってきます。</div>
+    </div>
+
+    <div class="card">
+      <h2>週ごとの純アルコール量（直近8週・1日平均）</h2>
+      <div class="chart" id="chart"></div>
+    </div>
+
+    <div class="card">
+      <h2>実績</h2>
+      <div class="save-stat">
+        <div class="b"><div class="v" style="color:var(--green)" id="realZero">0</div><div class="k">飲まなかった日 累計</div></div>
+        <div class="b"><div class="v" style="color:var(--green)" id="realMoney">¥0</div><div class="k">実際に浮いた酒代</div></div>
+        <div class="b"><div class="v" id="best">0</div><div class="k">最長連続</div></div>
+      </div>
+      <div class="save-stat" style="margin-top:8px;">
+        <div class="b"><div class="v" id="avg30">0</div><div class="k">30日平均g/日</div></div>
+        <div class="b"><div class="v" id="rate30">0%</div><div class="k">30日 休肝率</div></div>
+        <div class="b"><div class="v" style="color:var(--accent)" id="surfWins">0</div><div class="k">波を乗り切った回</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 設定 ============ -->
+  <section class="page" id="page-set">
+    <div class="card">
+      <h2>目標</h2>
+      <div class="seg" id="planSeg">
+        <button data-p="alt" class="on">2日に1度</button>
+        <button data-p="limit">毎日 上限内</button>
+        <button data-p="kinshu">禁酒</button>
+      </div>
+      <div class="hint" id="planHint"></div>
+    </div>
+    <div class="card">
+      <h2>🎣 次の釣行（これをテコにする）</h2>
+      <div class="field" style="margin:0">
+        <label>釣りに行く予定日</label>
+        <input type="date" id="setFish">
+        <div class="hint">登録すると、ホームにカウントダウンが出ます。「釣り前は飲まない」を武器にしましょう。前日は特に強めのアラートを出します。</div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>飲む日の上限・基準</h2>
+      <div class="field" id="limitField">
+        <label>飲む日の上限（純アルコール g）</label>
+        <input type="number" id="setLimit" inputmode="numeric" min="0" step="2">
+        <div class="hint">目安: 40g＝国が「これ以上はリスク」とする量。あなたの普段は約64g（9%500＋7%500）。</div>
+      </div>
+      <div class="field">
+        <label>週の休肝日 目標（日）</label>
+        <input type="number" id="setRest" inputmode="numeric" min="0" max="7" step="1">
+      </div>
+    </div>
+    <div class="card">
+      <h2>いつもの晩酌（節約・恐怖計算の基準）</h2>
+      <div class="mrow">
+        <div class="field" style="margin:0"><label>1日の酒代 ¥</label><input type="number" id="setCost" inputmode="numeric" min="0" step="50"></div>
+        <div class="field" style="margin:0"><label>1日の kcal</label><input type="number" id="setKcal" inputmode="numeric" min="0" step="10"></div>
+      </div>
+      <div class="field" style="margin:0"><label>1日の純アルコール g（普段）</label><input type="number" id="setUsual" inputmode="numeric" min="0" step="2"></div>
+    </div>
+    <div class="card">
+      <h2>安全のために</h2>
+      <div class="note">毎日この量を続けている場合、急にゼロにすると離脱症状（手の震え・強い不安・動悸・不眠・発汗など）が出ることがあります。だから<b>「2日に1度」への漸減は正しいやり方</b>です。もし震え・幻覚・強い動悸などが出たら、我慢せず医療機関（心療内科・内科）に相談してください。このアプリは記録と踏ん張りの道具で、治療の代わりではありません。</div>
+    </div>
+    <div class="card">
+      <h2>データ</h2>
+      <button class="btn ghost" onclick="exportData()">📤 バックアップを書き出す</button>
+      <div style="height:8px"></div>
+      <button class="btn ghost" onclick="importData()">📥 バックアップから復元</button>
+      <div style="height:8px"></div>
+      <button class="btn danger" onclick="resetAll()">全データを消去</button>
+      <div class="hint">データはこの端末のブラウザ内だけに保存されます。機種変更前に書き出しておくと安心です。</div>
+    </div>
+    <div style="text-align:center; color:var(--muted); font-size:11px; margin-top:6px;">隔日チャレンジ v2.0 ・ 自分用</div>
+  </section>
+</div>
+
+<nav class="nav">
+  <a class="on" data-p="home" onclick="go('home')"><span class="ic">🏠</span>今日</a>
+  <a data-p="cal" onclick="go('cal')"><span class="ic">📅</span>カレンダー</a>
+  <a data-p="stats" onclick="go('stats')"><span class="ic">📊</span>記録</a>
+  <a data-p="set" onclick="go('set')"><span class="ic">⚙️</span>設定</a>
+</nav>
+
+<!-- 記録モーダル -->
+<div class="modal" id="logModal">
+  <div class="sheet">
+    <h3>飲んだものを記録</h3>
+    <div class="plist" id="presetList"></div>
+    <div id="customBox" style="display:none;">
+      <div class="mrow">
+        <div class="field" style="margin:0"><label>量 ml</label><input type="number" id="cMl" inputmode="numeric" value="500"></div>
+        <div class="field" style="margin:0"><label>度数 %</label><input type="number" id="cPct" inputmode="decimal" value="9"></div>
+      </div>
+      <div class="mrow">
+        <div class="field" style="margin:0"><label>1杯の酒代 ¥</label><input type="number" id="cCost" inputmode="numeric" value="0"></div>
+        <div class="field" style="margin:0"><label>1杯 kcal</label><input type="number" id="cKcal" inputmode="numeric" value="0"></div>
+      </div>
+    </div>
+    <div class="counter">
+      <button onclick="cnt(-1)">−</button>
+      <span class="num" id="cntNum">1</span>
+      <button onclick="cnt(1)">＋</button>
+    </div>
+    <div style="text-align:center; color:var(--sub); font-size:12px; margin-bottom:14px;" id="logPreview"></div>
+    <button class="btn primary" onclick="saveLog()">記録する</button>
+    <div style="height:8px"></div>
+    <button class="btn ghost" onclick="closeLog()">キャンセル</button>
+  </div>
+</div>
+
+<!-- 波乗りタイマー -->
+<div class="modal center" id="surfModal">
+  <div class="sheet centered">
+    <h3>🌊 飲みたい波、乗り切ろう</h3>
+    <div class="surf-time" id="surfTime">20:00</div>
+    <div class="surf-msg" id="surfMsg"></div>
+    <div style="font-size:12px; color:var(--sub); margin:14px 0 6px;">今の引き金は？</div>
+    <div class="chips" id="triggerChips"></div>
+    <div style="font-size:12px; color:var(--sub); margin:6px 0;">代わりにやること</div>
+    <div class="chips" id="copeChips"></div>
+    <button class="btn zero" onclick="surfWin()">✊ 乗り切った！飲まない</button>
+    <div style="height:8px"></div>
+    <button class="btn ghost" onclick="closeSurf()">閉じる（まだ我慢中）</button>
+    <div style="height:8px"></div>
+    <button class="btn drink" onclick="surfGiveIn()">…今日は飲む（正直に記録）</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ データ ============ */
+const KEY='kinshu_data_v1';
+const PRESETS=[
+  {id:'str9',   em:'🥫', name:'ストロング 9% 500', ml:500, pct:9, cost:200, kcal:230},
+  {id:'chu7',   em:'🥫', name:'チューハイ 7% 500', ml:500, pct:7, cost:180, kcal:250},
+  {id:'beer5',  em:'🍺', name:'ビール 中瓶',   ml:500, pct:5,  cost:250, kcal:200},
+  {id:'beer3',  em:'🍺', name:'ビール 350缶',  ml:350, pct:5,  cost:200, kcal:140},
+  {id:'sake',   em:'🍶', name:'日本酒 1合',    ml:180, pct:15, cost:200, kcal:185},
+  {id:'wine',   em:'🍷', name:'ワイン グラス', ml:120, pct:12, cost:200, kcal:85},
+  {id:'high',   em:'🥃', name:'ハイボール',    ml:350, pct:7,  cost:150, kcal:100},
+  {id:'shochu', em:'🍶', name:'焼酎 水割り',   ml:100, pct:25, cost:150, kcal:140},
+  {id:'whisky', em:'🥃', name:'ウイスキー',    ml:30,  pct:40, cost:150, kcal:96},
+  {id:'other',  em:'➕', name:'その他（手入力）',ml:500, pct:9, cost:0, kcal:0},
+];
+const TRIGGERS=['仕事のストレス','夕方の習慣','なんとなく','疲れた','付き合い','ごほうび'];
+const COPES=['炭酸水を飲む','熱いシャワー','10分だけ散歩','釣具の手入れ','歯を磨く','スマホでルアー物色','甘い物を食べる','早めに寝る'];
+const SURF_MSGS=[
+  'この波は必ず引く。飲みたさのピークは平均20分。今がその山だ。',
+  'あと1本が、「毎日」を「隔日」に戻せなくする。1本の重さを思い出せ。',
+  '明日の朝、飲まなかった自分に「ありがとう」と言える。',
+  '肝臓は今日、休みたがってる。24時間ずっと働かせてないか？',
+  '今ガマンすれば連続記録が伸びる。飲めば、ゼロに戻る。',
+  'ストレスは酒では消えない。朝には二日酔いとして残るだけだ。',
+  '水を1杯。炭酸水を1杯。手と口を別のことで埋めろ。',
+  '「飲みたい」じゃなく「習慣が飲めと言ってる」だけ。お前の意志じゃない。',
+];
+const DEF={
+  plan:'alt', limitG:40, restPerWeek:3,
+  usualG:64, refCost:380, refKcal:480,
+  fishDate:'', surfWins:0, cravings:[],
+  days:{}
+};
+let D=load();
+function load(){ try{const s=localStorage.getItem(KEY); if(s)return Object.assign({},JSON.parse(JSON.stringify(DEF)),JSON.parse(s)); }catch(e){} return JSON.parse(JSON.stringify(DEF)); }
+function save(){localStorage.setItem(KEY,JSON.stringify(D));}
+function alcG(ml,pct){return ml*pct/100*0.8;}
+function todayKey(d=new Date()){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),da=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${da}`;}
+function dayObj(k){ if(!D.days[k]) D.days[k]={drinks:[],zero:false}; return D.days[k]; }
+function dayTotalG(k){const o=D.days[k]; if(!o)return 0; return (o.drinks||[]).reduce((s,x)=>s+x.g*x.count,0);}
+function isZeroDay(k){const o=D.days[k]; return !!o && o.zero && (!o.drinks||!o.drinks.length);}
+function hasDrinks(k){const o=D.days[k]; return !!o && o.drinks && o.drinks.length>0 && dayTotalG(k)>0;}
+
+/* ============ ナビ ============ */
+function go(p){
+  document.querySelectorAll('.page').forEach(e=>e.classList.remove('on'));
+  document.getElementById('page-'+p).classList.add('on');
+  document.querySelectorAll('.nav a').forEach(a=>a.classList.toggle('on',a.dataset.p===p));
+  if(p==='cal') renderCal();
+  if(p==='stats') renderStats();
+  if(p==='home') renderHome();
+  if(p==='set') renderSet();
+  window.scrollTo(0,0);
+}
+
+/* ============ 隔日ロジック ============ */
+// 今日は「休肝すべき日」か：昨日飲んでたら今日は休む日
+function targetToday(){
+  if(D.plan==='kinshu') return 'rest';
+  if(D.plan!=='alt') return 'ok';
+  const y=new Date(); y.setDate(y.getDate()-1);
+  return hasDrinks(todayKey(y)) ? 'rest' : 'ok';
+}
+
+/* ============ ホーム ============ */
+function renderHome(){
+  const now=new Date();
+  const k=todayKey(now); const g=dayTotalG(k);
+  const hour=now.getHours();
+  const isK=D.plan==='kinshu';
+  const limit=isK?0:D.limitG;
+  const tgt=targetToday();
+  document.getElementById('modeLabel').textContent = isK?'禁酒モード':(D.plan==='alt'?'2日に1度ペース':'毎日 上限内');
+  document.getElementById('todayDateLabel').textContent=fmtDate(now)+'（今日）';
+  document.getElementById('nowClock').textContent=String(hour).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+' 現在';
+  document.getElementById('todayG').textContent=Math.round(g);
+  document.getElementById('limitCap').textContent=isK?'目標 0g':('飲む日の上限 '+limit+'g');
+
+  // バー
+  const bar=document.getElementById('todayBar');
+  let pct,col;
+  if(isK){pct=g>0?100:0; col=g>0?'var(--red)':'var(--green)';}
+  else{pct=Math.min(100, limit>0?g/limit*100:(g>0?100:0)); col=g===0?'var(--green)':g<=limit?'var(--yellow)':'var(--red)';}
+  bar.style.width=pct+'%'; bar.style.background=col;
+
+  // 判定バナー
+  const v=document.getElementById('verdict');
+  const done=isZeroDay(k), drank=hasDrinks(k);
+  v.className='verdict '+(drank?(g<=limit&&!isK?'ok':'fail'):(tgt==='rest'?'rest':'ok'));
+  if(done){
+    v.className='verdict rest';
+    document.getElementById('vTag').textContent='✅ 達成';
+    document.getElementById('vBig').textContent='今日は飲まない日、クリア！';
+    document.getElementById('vMsg').textContent='この1日が積み重なる。えらい。';
+  }else if(drank){
+    if(g<=limit&&!isK){
+      document.getElementById('vTag').textContent='飲んだ日';
+      document.getElementById('vBig').textContent='上限内でおさまってる 👍';
+      document.getElementById('vMsg').textContent='明日は必ず休肝日に。';
+    }else{
+      document.getElementById('vTag').textContent='⚠️ 記録';
+      document.getElementById('vBig').textContent=(tgt==='rest'?'休む予定の日に飲んだ':'上限オーバー');
+      document.getElementById('vMsg').textContent='責めなくていい。明日'+(tgt==='rest'?'こそ':'は上限内で')+'立て直そう。';
+    }
+  }else if(tgt==='rest'){
+    document.getElementById('vTag').textContent='今日の予定';
+    document.getElementById('vBig').textContent='🚫 今日は「飲まない日」';
+    document.getElementById('vMsg').textContent='昨日飲んだ。隔日ペースなら今日は休肝日。';
+  }else{
+    document.getElementById('vTag').textContent='今日の予定';
+    document.getElementById('vBig').textContent='🍶 飲んでもいい日（上限まで）';
+    document.getElementById('vMsg').textContent='飲むなら上限'+limit+'gまで。飲まずに我慢できれば連続記録が伸びる。';
+  }
+
+  // 夕方アラート
+  const dbox=document.getElementById('dangerBox');
+  const eveningRisk = hour>=15 && !done && !drank && (tgt==='rest'||isK);
+  if(eveningRisk){
+    dbox.style.display='block';
+    const fishD=fishDays();
+    let s='仕事のストレスで飲みたくなる時間。でも今日は飲まない日だ。';
+    if(hour>=18) s='いちばん飲みたい時間。ここを越えれば勝ち。この波は20分で引く。';
+    if(fishD!==null && fishD<=1) s='🎣 '+(fishD===0?'明日は釣り！':'あさっては釣り！')+' 今日飲むと当日ダルい。シラフで竿を出そう。';
+    document.getElementById('dangerT').textContent = hour>=18?'🔥 魔の時間、ピーク':'⚠️ 夕方 — 魔の時間が近い';
+    document.getElementById('dangerS').textContent=s;
+  }else dbox.style.display='none';
+
+  // 連続・週
+  const st=streakZero();
+  document.getElementById('streak').innerHTML=st+'<small>日</small>';
+  document.getElementById('weekRest').innerHTML=weekRest()+'<small>/'+D.restPerWeek+'</small>';
+  document.getElementById('streakWarn').textContent = st>0 ? ('🔥 '+st+'日連続で守れてる。ここで飲むとゼロに戻る。') : '';
+
+  renderQuick(); renderTodayLog();
+  document.getElementById('zeroBtn').style.opacity=done?.5:1;
+
+  // 釣り
+  renderFish();
+}
+function renderFish(){
+  const box=document.getElementById('fishBox');
+  const d=fishDays();
+  if(d===null || d<0){ box.style.display='none'; return; }
+  box.style.display='flex';
+  document.getElementById('fishNum').innerHTML = d===0?'今日<small></small>':(d+'<small>日</small>');
+  document.getElementById('fishTitle').textContent = d===0?'🎣 今日は釣り！':'次の釣行まで';
+  document.getElementById('fishSub').textContent = d===0?'万全のコンディションで':(d===1?'前日。今日は飲まずに整えよう':'シラフで楽しむために逆算しよう');
+}
+function fishDays(){
+  if(!D.fishDate) return null;
+  const t=new Date(D.fishDate+'T00:00:00');
+  const now=new Date(); now.setHours(0,0,0,0);
+  return Math.round((t-now)/86400000);
+}
+function renderQuick(){
+  const el=document.getElementById('quickGrid'); el.innerHTML='';
+  PRESETS.filter(p=>p.id!=='other').slice(0,6).forEach(p=>{
+    const g=Math.round(alcG(p.ml,p.pct));
+    const d=document.createElement('div'); d.className='qbtn';
+    d.innerHTML=`<span class="em">${p.em}</span>${p.name.replace(' 500','').replace(' 350缶','缶')}<span class="g">${g}g</span>`;
+    d.onclick=()=>quickAdd(p); el.appendChild(d);
+  });
+}
+function quickAdd(p){
+  const k=todayKey(); const o=dayObj(k); o.zero=false;
+  o.drinks.push({name:p.name,em:p.em,ml:p.ml,pct:p.pct,g:alcG(p.ml,p.pct),cost:p.cost,kcal:p.kcal,count:1});
+  save(); renderHome(); toast(p.em+' 記録（'+Math.round(alcG(p.ml,p.pct))+'g）');
+}
+function renderTodayLog(){
+  const k=todayKey(); const o=D.days[k];
+  const el=document.getElementById('todayLog');
+  if(!o || (!o.drinks.length && !o.zero)){el.innerHTML='<div class="empty">まだ記録がありません</div>'; return;}
+  if(o.zero && !o.drinks.length){el.innerHTML='<div class="empty" style="color:var(--green)">✊ 飲まない日として記録済み</div>'; return;}
+  el.innerHTML='';
+  o.drinks.forEach((x,i)=>{
+    const div=document.createElement('div'); div.className='log-item';
+    div.innerHTML=`<span class="em">${x.em||'🍶'}</span><div class="info"><div class="n">${x.name} ×${x.count}</div>
+      <div class="d">${Math.round(x.g*x.count)}g ・ ${x.kcal*x.count}kcal ・ ¥${x.cost*x.count}</div></div>
+      <span class="del" data-i="${i}">✕</span>`;
+    div.querySelector('.del').onclick=()=>{o.drinks.splice(i,1); save(); renderHome();};
+    el.appendChild(div);
+  });
+}
+function markZero(){
+  const k=todayKey(); const o=dayObj(k);
+  if(o.zero){o.zero=false; toast('取消しました');}
+  else{o.drinks=[]; o.zero=true; toast('✊ 飲まない日！ よく耐えた');}
+  save(); renderHome();
+}
+
+/* streak: 直近の連続「飲まなかった日」（今日飲んでたら0、今日未記録なら昨日以前で計算） */
+function streakZero(){
+  let n=0; let start=0;
+  const tk=todayKey();
+  if(hasDrinks(tk)) return 0;
+  if(isZeroDay(tk)) n=1;
+  // 昨日から遡る
+  let d=new Date(); d.setDate(d.getDate()-1);
+  for(let i=0;i<400;i++){
+    const k=todayKey(d);
+    if(isZeroDay(k)) n++;
+    else break; // 飲んだ日 or 未記録で途切れ
+    d.setDate(d.getDate()-1);
+  }
+  return n;
+}
+function weekRest(){
+  const now=new Date(); const wd=(now.getDay()+6)%7; let cnt=0;
+  for(let i=0;i<=wd;i++){const d=new Date(now); d.setDate(now.getDate()-i); if(isZeroDay(todayKey(d)))cnt++;}
+  return cnt;
+}
+
+/* ============ 記録モーダル ============ */
+let sel=null, cntVal=1;
+function openLog(){
+  sel=PRESETS[0]; cntVal=1;
+  const el=document.getElementById('presetList'); el.innerHTML='';
+  PRESETS.forEach(p=>{
+    const g=p.id==='other'?'':Math.round(alcG(p.ml,p.pct))+'g';
+    const c=document.createElement('div'); c.className='pcard'+(p===sel?' on':'');
+    c.innerHTML=`<span class="em">${p.em}</span><div><div class="t">${p.name}</div><div class="s">${g}</div></div>`;
+    c.onclick=()=>{sel=p; document.querySelectorAll('.pcard').forEach(x=>x.classList.remove('on')); c.classList.add('on');
+      document.getElementById('customBox').style.display=p.id==='other'?'block':'none'; updatePreview();};
+    el.appendChild(c);
+  });
+  document.getElementById('customBox').style.display='none';
+  document.getElementById('cntNum').textContent=cntVal; updatePreview();
+  document.getElementById('logModal').classList.add('show');
+}
+function closeLog(){document.getElementById('logModal').classList.remove('show');}
+function cnt(n){cntVal=Math.max(1,cntVal+n); document.getElementById('cntNum').textContent=cntVal; updatePreview();}
+function curDrink(){
+  if(sel.id==='other'){
+    const ml=+document.getElementById('cMl').value||0, pct=+document.getElementById('cPct').value||0;
+    const cost=+document.getElementById('cCost').value||0, kcal=+document.getElementById('cKcal').value||0;
+    return {name:'その他',em:'🍶',ml,pct,g:alcG(ml,pct),cost,kcal};
+  }
+  return {name:sel.name,em:sel.em,ml:sel.ml,pct:sel.pct,g:alcG(sel.ml,sel.pct),cost:sel.cost,kcal:sel.kcal};
+}
+function updatePreview(){const d=curDrink(); document.getElementById('logPreview').textContent=`合計 ${Math.round(d.g*cntVal)}g ・ ${d.kcal*cntVal}kcal ・ ¥${d.cost*cntVal}`;}
+document.addEventListener('input',e=>{if(['cMl','cPct','cCost','cKcal'].includes(e.target.id))updatePreview();});
+function saveLog(){const d=curDrink(); const k=todayKey(); const o=dayObj(k); o.zero=false; o.drinks.push({...d,count:cntVal}); save(); closeLog(); renderHome(); toast('記録しました');}
+
+/* ============ 波乗りタイマー ============ */
+let surfSec=0, surfInt=null, surfMsgInt=null, surfTrigger='';
+function openSurf(){
+  surfSec=20*60; surfTrigger='';
+  document.getElementById('surfTime').textContent='20:00';
+  // trigger chips
+  const tc=document.getElementById('triggerChips'); tc.innerHTML='';
+  TRIGGERS.forEach(t=>{const c=document.createElement('div'); c.className='chip'; c.textContent=t;
+    c.onclick=()=>{document.querySelectorAll('#triggerChips .chip').forEach(x=>x.classList.remove('on')); c.classList.add('on'); surfTrigger=t;}; tc.appendChild(c);});
+  const cc=document.getElementById('copeChips'); cc.innerHTML='';
+  COPES.forEach(t=>{const c=document.createElement('div'); c.className='chip'; c.textContent=t; cc.appendChild(c);});
+  rotMsg();
+  document.getElementById('surfModal').classList.add('show');
+  clearInterval(surfInt); clearInterval(surfMsgInt);
+  surfInt=setInterval(()=>{
+    surfSec--; if(surfSec<0)surfSec=0;
+    document.getElementById('surfTime').textContent=String(Math.floor(surfSec/60)).padStart(2,'0')+':'+String(surfSec%60).padStart(2,'0');
+    if(surfSec===0){clearInterval(surfInt); document.getElementById('surfTime').textContent='00:00 🎉'; document.getElementById('surfMsg').textContent='20分、乗り切った。飲みたさの波は引いたはず。あなたの勝ちだ。';}
+  },1000);
+  surfMsgInt=setInterval(rotMsg,7000);
+}
+let msgIdx=0;
+function rotMsg(){
+  let m=SURF_MSGS[msgIdx%SURF_MSGS.length]; msgIdx++;
+  const fd=fishDays();
+  if(fd!==null && fd>=0 && fd<=3 && msgIdx%3===0) m='🎣 釣りまであと'+(fd===0?'今日':fd+'日')+'。二日酔いで竿を出したくないだろ？';
+  const st=streakZero();
+  if(st>=2 && msgIdx%4===0) m='🔥 今'+st+'日連続。ここで飲めば、また0日目からだ。';
+  document.getElementById('surfMsg').textContent=m;
+}
+function closeSurf(){clearInterval(surfInt); clearInterval(surfMsgInt); document.getElementById('surfModal').classList.remove('show');}
+function surfWin(){
+  D.surfWins=(D.surfWins||0)+1;
+  D.cravings.push({d:todayKey(), trigger:surfTrigger, survived:true});
+  closeSurf(); toast('✊ 波を乗り切った！+1'); renderHome();
+}
+function surfGiveIn(){
+  D.cravings.push({d:todayKey(), trigger:surfTrigger, survived:false});
+  save(); closeSurf(); openLog();
+}
+
+/* ============ カレンダー ============ */
+let calDate=new Date();
+function calMove(n){calDate.setMonth(calDate.getMonth()+n); renderCal();}
+function renderCal(){
+  const y=calDate.getFullYear(), m=calDate.getMonth();
+  document.getElementById('calMonth').textContent=`${y}年 ${m+1}月`;
+  document.getElementById('monthSumLabel').textContent=`${m+1}月`;
+  const grid=document.getElementById('calGrid'); grid.innerHTML='';
+  ['月','火','水','木','金','土','日'].forEach(w=>{const e=document.createElement('div');e.className='wd';e.textContent=w;grid.appendChild(e);});
+  const first=new Date(y,m,1); const startWd=(first.getDay()+6)%7; const days=new Date(y,m+1,0).getDate();
+  for(let i=0;i<startWd;i++){const e=document.createElement('div');e.className='cell blank';grid.appendChild(e);}
+  const isK=D.plan==='kinshu'; const limit=isK?0:D.limitG;
+  let cz=0,cd=0,co=0;
+  for(let day=1;day<=days;day++){
+    const k=`${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const g=dayTotalG(k); const cell=document.createElement('div'); cell.className='cell';
+    let cls='',dg='';
+    if(isZeroDay(k)){cls='zero';dg='休';cz++;}
+    else if(hasDrinks(k)){ if(g<=limit&&!isK){cls='ok';cd++;}else{cls='over';co++;} dg=Math.round(g)+'g'; }
+    if(cls)cell.classList.add(cls);
+    if(k===todayKey())cell.classList.add('today');
+    cell.innerHTML=`<div>${day}</div><div class="dg">${dg}</div>`;
+    cell.onclick=()=>openDay(k); grid.appendChild(cell);
+  }
+  document.getElementById('mZero').textContent=cz;
+  document.getElementById('mDrink').textContent=cd+co;
+  document.getElementById('mOver').textContent=co;
+  const recorded=cz+cd+co;
+  document.getElementById('altProgress').textContent = recorded? `記録した${recorded}日のうち、飲まなかったのは${cz}日（${Math.round(cz/recorded*100)}%）。2日に1度＝50%が目標。`:'';
+}
+function openDay(k){
+  if(k===todayKey()){go('home'); return;}
+  const o=D.days[k]; const g=dayTotalG(k);
+  let txt=fmtKey(k)+'\n';
+  if(isZeroDay(k)) txt+='✊ 飲まなかった日';
+  else if(hasDrinks(k)) txt+='計 '+Math.round(g)+'g\n'+o.drinks.map(x=>`・${x.name}×${x.count}`).join('\n');
+  else txt+='記録なし';
+  alert(txt);
+}
+
+/* ============ 統計・恐怖 ============ */
+function renderStats(){
+  // 恐怖：毎日続けたら1年
+  const yAlc=D.usualG*365, yMoney=D.refCost*365, yKcal=D.refKcal*365, yCans=Math.round(D.usualG/32)*365; // 32g≒1本相当の概算
+  document.getElementById('fearLead').textContent='あなたの普段＝1日 約'+D.usualG+'g（'+(D.usualG/40).toFixed(1)+'倍のリスク量）。それを365日。';
+  document.getElementById('fAlc').textContent=(yAlc/1000).toFixed(1)+' kg';
+  document.getElementById('fMoney').textContent='¥'+yMoney.toLocaleString();
+  document.getElementById('fKcal').textContent=yKcal.toLocaleString()+' kcal';
+  document.getElementById('fCans').textContent=Math.round(D.refCost/190)*365+' 本前後';
+  document.getElementById('fearFoot').textContent='純アルコール'+(yAlc/1000).toFixed(1)+'kgは、一升瓶('+ '約144g)'+Math.round(yAlc/144)+'本分。休肝日ゼロなら肝臓は1年間ほぼ無休。';
+
+  // 取り戻せる（半分）
+  document.getElementById('gMoney').textContent='¥'+Math.round(yMoney/2).toLocaleString();
+  document.getElementById('gKcal').textContent=Math.round(yKcal/2).toLocaleString();
+  document.getElementById('gDays').textContent='約'+Math.round(365/2)+'日';
+
+  // 週グラフ
+  const chart=document.getElementById('chart'); chart.innerHTML='';
+  const now=new Date(); const curWd=(now.getDay()+6)%7; const monThis=new Date(now); monThis.setDate(now.getDate()-curWd);
+  const weeks=[];
+  for(let w=7;w>=0;w--){const mon=new Date(monThis); mon.setDate(monThis.getDate()-w*7); let sum=0,c=0;
+    for(let i=0;i<7;i++){const d=new Date(mon); d.setDate(mon.getDate()+i); if(d>now)break; sum+=dayTotalG(todayKey(d)); c++;}
+    weeks.push({label:`${mon.getMonth()+1}/${mon.getDate()}`, avg:c?sum/c:0});}
+  const max=Math.max(20,...weeks.map(w=>w.avg));
+  const isK=D.plan==='kinshu'; const limit=isK?0.0001:D.limitG;
+  weeks.forEach(w=>{const col=document.createElement('div'); col.className='col'; const h=Math.max(2,w.avg/max*110);
+    col.innerHTML=`<div class="vv">${Math.round(w.avg)}</div><div class="bcol ${w.avg>limit?'over':''}" style="height:${h}px"></div><div class="lb">${w.label}</div>`;
+    chart.appendChild(col);});
+
+  // 実績
+  const zeros=countAllZero();
+  document.getElementById('realZero').textContent=zeros;
+  document.getElementById('realMoney').textContent='¥'+(zeros*D.refCost).toLocaleString();
+  document.getElementById('best').textContent=bestStreak()+'日';
+  document.getElementById('avg30').textContent=Math.round(avgLast(30))+'g';
+  document.getElementById('rate30').textContent=Math.round(zeroRate(30))+'%';
+  document.getElementById('surfWins').textContent=(D.surfWins||0);
+}
+function countAllZero(){let n=0;for(const k in D.days){if(isZeroDay(k))n++;}return n;}
+function avgLast(n){let s=0;const now=new Date();for(let i=0;i<n;i++){const d=new Date(now);d.setDate(now.getDate()-i);s+=dayTotalG(todayKey(d));}return s/n;}
+function zeroRate(n){let z=0;const now=new Date();for(let i=0;i<n;i++){const d=new Date(now);d.setDate(now.getDate()-i);if(isZeroDay(todayKey(d)))z++;}return z/n*100;}
+function bestStreak(){
+  const keys=Object.keys(D.days).filter(k=>isZeroDay(k)).sort();
+  if(!keys.length)return 0; let best=1,cur=1;
+  for(let i=1;i<keys.length;i++){const prev=new Date(keys[i-1]); prev.setDate(prev.getDate()+1);
+    if(todayKey(prev)===keys[i]){cur++;best=Math.max(best,cur);}else cur=1;}
+  return best;
+}
+
+/* ============ 設定 ============ */
+function renderSet(){
+  document.querySelectorAll('#planSeg button').forEach(b=>b.classList.toggle('on',b.dataset.p===D.plan));
+  document.getElementById('setLimit').value=D.limitG;
+  document.getElementById('setRest').value=D.restPerWeek;
+  document.getElementById('setCost').value=D.refCost;
+  document.getElementById('setKcal').value=D.refKcal;
+  document.getElementById('setUsual').value=D.usualG;
+  document.getElementById('setFish').value=D.fishDate||'';
+  document.getElementById('limitField').style.opacity=D.plan==='kinshu'?.4:1;
+  document.getElementById('planHint').textContent =
+    D.plan==='kinshu' ? '禁酒モード：1滴でも赤。連続日数を伸ばすのが目標。'
+    : D.plan==='alt' ? '2日に1度：昨日飲んだら今日は自動で「飲まない日」に。夕方アラートも強めに出ます。'
+    : '毎日 上限内：休肝日は指定せず、1日の量を上限内に抑える。';
+}
+document.querySelectorAll('#planSeg button').forEach(b=>{b.onclick=()=>{D.plan=b.dataset.p; save(); renderSet(); toast('目標を変更');};});
+['setLimit','setRest','setCost','setKcal','setUsual','setFish'].forEach(id=>{
+  document.getElementById(id).addEventListener('change',()=>{
+    D.limitG=+document.getElementById('setLimit').value||0;
+    D.restPerWeek=Math.min(7,+document.getElementById('setRest').value||0);
+    D.refCost=+document.getElementById('setCost').value||0;
+    D.refKcal=+document.getElementById('setKcal').value||0;
+    D.usualG=+document.getElementById('setUsual').value||0;
+    D.fishDate=document.getElementById('setFish').value||'';
+    save(); toast('保存しました'); if(id==='setFish')renderHome();
+  });
+});
+function exportData(){const t=JSON.stringify(D); (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>prompt('コピーしました。メモ等に保管：',t),()=>prompt('下記を保管してください：',t));}
+function importData(){const t=prompt('バックアップ文字列を貼り付け：'); if(!t)return; try{D=Object.assign({},JSON.parse(JSON.stringify(DEF)),JSON.parse(t)); save(); renderSet(); renderHome(); toast('復元しました');}catch(e){alert('読み込めませんでした');}}
+function resetAll(){if(confirm('本当に全データを消しますか？（元に戻せません）')){localStorage.removeItem(KEY); D=JSON.parse(JSON.stringify(DEF)); renderSet(); renderHome(); toast('消去しました');}}
+
+/* ============ util ============ */
+function fmtDate(d){const w=['日','月','火','水','木','金','土'][d.getDay()];return `${d.getMonth()+1}月${d.getDate()}日(${w})`;}
+function fmtKey(k){const[y,m,da]=k.split('-');return fmtDate(new Date(+y,+m-1,+da));}
+let toastT; function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1800);}
+
+/* ============ 初期化 ============ */
+renderSet(); renderHome();
+// 時計・夕方アラートを1分ごとに更新
+setInterval(()=>{ if(document.getElementById('page-home').classList.contains('on')) renderHome(); },60000);
+</script>
+</body>
+</html>
