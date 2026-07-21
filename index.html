@@ -434,7 +434,7 @@
       <button class="btn danger" onclick="resetAll()">全データを消去</button>
       <div class="hint">データはこの端末のブラウザ内だけに保存されます。機種変更前に書き出しておくと安心です。</div>
     </div>
-    <div style="text-align:center; color:var(--muted); font-size:11px; margin-top:6px;">節酒アプリ v2.6 ・ 自分用</div>
+    <div style="text-align:center; color:var(--muted); font-size:11px; margin-top:6px;">節酒アプリ v2.7 ・ 自分用</div>
   </section>
 </div>
 
@@ -702,10 +702,20 @@ function loadWeeklyAI(){
     .then(m=>{tx.textContent=m;})
     .catch(e=>{tx.textContent='分析できませんでした：'+e.message;});
 }
+function cleanKey(v){return (v||'').replace(/\s+/g,'');}          // 全角/半角スペース・改行を除去
+function keyFormatWarn(p,key){
+  if(p==='gemini' && !/^AIza[0-9A-Za-z_\-]{20,}$/.test(key))
+    return '⚠️ Geminiキーの形が違うようです。正しくは「AIza」で始まる約39文字の半角英数字です。\n・aistudio.google.com/apikey で作ったキーか？\n・前後や途中に空白/全角が混じっていないか？\n確認して貼り直してください。';
+  if(p==='claude' && !/^sk-ant-/.test(key))
+    return '⚠️ Claudeキーの形が違うようです。正しくは「sk-ant-」で始まります。';
+  return '';
+}
 function testAI(){
-  const p=document.getElementById('setAiProvider').value, key=document.getElementById('setAiKey').value.trim();
+  const p=document.getElementById('setAiProvider').value, key=cleanKey(document.getElementById('setAiKey').value);
   const out=document.getElementById('aiTestOut');
   if(!p||!key){out.textContent='「使うAI」と「APIキー」を両方入れてください';return;}
+  const w=keyFormatWarn(p,key); if(w){out.textContent=w;return;}
+  document.getElementById('setAiKey').value=key; // 掃除したキーを反映
   D.aiProvider=p; D.aiKey=key; D.aiGeminiModel=''; save();
   out.textContent='テスト中…';
   callAI('あなたはテスト応答役です。',[{role:'user',text:'日本語で「接続OK」とだけ返して'}])
@@ -714,9 +724,11 @@ function testAI(){
 }
 // 生の診断：キーで使えるモデル一覧やエラー本文をそのまま表示
 async function diagAI(){
-  const p=document.getElementById('setAiProvider').value, key=document.getElementById('setAiKey').value.trim();
+  const p=document.getElementById('setAiProvider').value, key=cleanKey(document.getElementById('setAiKey').value);
   const out=document.getElementById('aiTestOut');
   if(!p||!key){out.textContent='「使うAI」と「APIキー」を両方入れてください';return;}
+  const w=keyFormatWarn(p,key); if(w){out.textContent=w;return;}
+  document.getElementById('setAiKey').value=key;
   D.aiProvider=p; D.aiKey=key; D.aiGeminiModel=''; save();
   out.textContent='診断中…';
   try{
@@ -1164,7 +1176,7 @@ document.querySelectorAll('#planSeg button').forEach(b=>{b.onclick=()=>{D.plan=b
     D.famWife=document.getElementById('setWife').value.trim();
     D.famSon=document.getElementById('setSon').value.trim();
     D.famDaughter=document.getElementById('setDaughter').value.trim();
-    const npv=document.getElementById('setAiProvider').value, nkey=document.getElementById('setAiKey').value.trim();
+    const npv=document.getElementById('setAiProvider').value, nkey=cleanKey(document.getElementById('setAiKey').value);
     if(npv!==D.aiProvider||nkey!==D.aiKey){ D.aiGeminiModel=''; D.aiDaily=null; } // キー変更で選び直し
     D.aiProvider=npv; D.aiKey=nkey;
     save(); toast('保存しました'); if(id==='setFish'||id==='setAiProvider'||id==='setAiKey')renderHome();
