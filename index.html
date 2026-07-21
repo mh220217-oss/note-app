@@ -259,7 +259,7 @@
       <div style="height:10px"></div>
       <button class="btn ai" onclick="openChat()">💬 AIコーチに相談する</button>
       <div style="height:10px"></div>
-      <button class="btn zero" id="zeroBtn" onclick="markZero()">✊ 今日は飲まなかった（休肝日にする）</button>
+      <button class="btn zero" id="zeroBtn" onclick="markZero()">✊ 今日は「飲まない日」にする</button>
       <div style="height:10px"></div>
       <button class="btn urge" onclick="openSurf()">🌊 飲みたい…（20分やり過ごす）</button>
       <div style="height:10px"></div>
@@ -434,7 +434,7 @@
       <button class="btn danger" onclick="resetAll()">全データを消去</button>
       <div class="hint">データはこの端末のブラウザ内だけに保存されます。機種変更前に書き出しておくと安心です。</div>
     </div>
-    <div style="text-align:center; color:var(--muted); font-size:11px; margin-top:6px;">節酒アプリ v2.7 ・ 自分用</div>
+    <div style="text-align:center; color:var(--muted); font-size:11px; margin-top:6px;">節酒アプリ v2.8 ・ 自分用</div>
   </section>
 </div>
 
@@ -827,9 +827,10 @@ function renderHome(){
   v.className='verdict '+(drank?(g<=limit&&!isK?'ok':'fail'):(tgt==='rest'?'rest':'ok'));
   if(done){
     v.className='verdict rest';
-    document.getElementById('vTag').textContent='✅ 達成';
-    document.getElementById('vBig').textContent='今日は飲まない日、クリア！';
-    document.getElementById('vMsg').textContent='この1日が積み重なる。えらい。';
+    const eve=hour>=20;
+    document.getElementById('vTag').textContent=eve?'✅ 達成':'💪 宣言中';
+    document.getElementById('vBig').textContent=eve?'今日は飲まない日、クリア！':'今日は「飲まない日」に決めた！';
+    document.getElementById('vMsg').textContent=eve?'この1日が積み重なる。えらい。':'夜まで守れば連続記録が伸びる。魔の時間はSOSで乗り切ろう。';
   }else if(drank){
     if(g<=limit&&!isK){
       document.getElementById('vTag').textContent='飲んだ日';
