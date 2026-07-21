@@ -415,6 +415,9 @@
         <input type="password" id="setAiKey" placeholder="キーを貼り付け" autocomplete="off">
       </div>
       <button class="btn ghost" onclick="testAI()">🔌 接続テスト</button>
+      <div style="height:8px"></div>
+      <button class="btn ghost" onclick="diagAI()">🩺 診断（詳しく調べる）</button>
+      <div id="aiTestOut" style="font-size:11px; white-space:pre-wrap; word-break:break-all; margin-top:10px; color:#a7c7d6; user-select:text; -webkit-user-select:text;"></div>
       <div class="hint" id="aiKeyHint">
         キーの取り方：<br>
         ・Gemini（無料）… <b>aistudio.google.com/apikey</b> で「Create API key」<br>
@@ -681,12 +684,40 @@ function loadWeeklyAI(){
 }
 function testAI(){
   const p=document.getElementById('setAiProvider').value, key=document.getElementById('setAiKey').value.trim();
-  if(!p||!key){toast('AIとキーを両方入れてください');return;}
+  const out=document.getElementById('aiTestOut');
+  if(!p||!key){out.textContent='「使うAI」と「APIキー」を両方入れてください';return;}
   D.aiProvider=p; D.aiKey=key; D.aiGeminiModel=''; save();
-  toast('テスト中…');
-  callAI('あなたはテスト応答役です。','日本語で「接続OK」とだけ返して'.length?[{role:'user',text:'日本語で「接続OK」とだけ返して'}]:[])
-    .then(r=>{alert('✅ 接続成功！\n応答：'+r);})
-    .catch(e=>{alert('❌ 接続失敗：\n'+e.message+'\n\nキーやプロバイダ選択を確認してください。');});
+  out.textContent='テスト中…';
+  callAI('あなたはテスト応答役です。',[{role:'user',text:'日本語で「接続OK」とだけ返して'}])
+    .then(r=>{out.textContent='✅ 接続成功！\n選択モデル: '+(D.aiGeminiModel||p)+'\n応答: '+r;})
+    .catch(e=>{out.textContent='❌ 接続失敗：\n'+e.message;});
+}
+// 生の診断：キーで使えるモデル一覧やエラー本文をそのまま表示
+async function diagAI(){
+  const p=document.getElementById('setAiProvider').value, key=document.getElementById('setAiKey').value.trim();
+  const out=document.getElementById('aiTestOut');
+  if(!p||!key){out.textContent='「使うAI」と「APIキー」を両方入れてください';return;}
+  D.aiProvider=p; D.aiKey=key; D.aiGeminiModel=''; save();
+  out.textContent='診断中…';
+  try{
+    if(p==='gemini'){
+      const res=await fetch('https://generativelanguage.googleapis.com/v1beta/models?key='+encodeURIComponent(key));
+      const raw=await res.text();
+      let info='【Gemini診断】 モデル一覧 HTTP '+res.status+'\n';
+      try{
+        const j=JSON.parse(raw);
+        if(j.error){ info+='エラー: '+(j.error.status||'')+' / '+(j.error.message||'').slice(0,300); }
+        else if(j.models){ const g=j.models.filter(m=>(m.supportedGenerationMethods||[]).includes('generateContent')).map(m=>m.name.replace('models/','')); info+='生成可モデル('+g.length+'):\n'+g.slice(0,25).join('\n'); }
+        else info+=raw.slice(0,400);
+      }catch(_){ info+=raw.slice(0,400); }
+      out.textContent=info;
+    }else{
+      const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
+        headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+        body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:20,messages:[{role:'user',content:'ping'}]})});
+      out.textContent='【Claude診断】 HTTP '+res.status+'\n'+(await res.text()).slice(0,400);
+    }
+  }catch(e){ out.textContent='通信エラー（ネット/ブラウザ制限の可能性）: '+e.message; }
 }
 function fam(role){
   if(role==='wife') return D.famWife||'奥さん';
