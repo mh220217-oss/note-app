@@ -68,6 +68,10 @@
   .btn.ghost{background:var(--card2); color:var(--txt); border:1px solid var(--line);}
   .btn.zero{background:linear-gradient(135deg,var(--green),#0f9d67); color:#04121a;}
   .btn.urge{background:linear-gradient(135deg,#6366f1,#4338ca); color:#fff;}
+  .btn.sos{background:linear-gradient(135deg,#f97316,#dc2626); color:#fff; box-shadow:0 4px 14px rgba(220,38,38,.3);}
+  .fam-msg{background:linear-gradient(135deg,#1a2e1f,#14261a); border:1px solid #2e5a3a; border-radius:14px; padding:16px; text-align:center; font-size:16px; font-weight:700; line-height:1.7; color:#c9f0d6; min-height:80px; display:flex; align-items:center; justify-content:center;}
+  .sos-rules{background:var(--card2); border-radius:12px; padding:12px 14px; margin:12px 0; font-size:13px; line-height:2;}
+  .sos-rules b{color:var(--yellow);}
   .btn.drink{background:transparent; color:var(--muted); border:1px solid var(--line);}
   .btn.danger{background:transparent; color:var(--red); border:1px solid var(--red);}
   .btn:active{transform:scale(.98);}
@@ -203,6 +207,8 @@
     <div class="danger" id="dangerBox" style="display:none;">
       <div class="t" id="dangerT">⚠️ 魔の時間帯</div>
       <div class="s" id="dangerS"></div>
+      <button class="btn sos" onclick="openSos()">🏪 コンビニに寄りそう…助けて</button>
+      <div style="height:8px"></div>
       <button class="btn urge" onclick="openSurf()">🌊 飲みたい波が来た（20分だけ耐える）</button>
       <div style="height:8px"></div>
       <button class="btn zero" onclick="markZero()">✊ 今日は飲まずに乗り切る</button>
@@ -228,6 +234,8 @@
     </div>
 
     <div class="card">
+      <button class="btn sos" onclick="openSos()">🏪 帰り道・コンビニで踏みとどまる</button>
+      <div style="height:10px"></div>
       <button class="btn zero" id="zeroBtn" onclick="markZero()">✊ 今日は飲まなかった（休肝日にする）</button>
       <div style="height:10px"></div>
       <button class="btn urge" onclick="openSurf()">🌊 飲みたい…（20分やり過ごす）</button>
@@ -330,6 +338,15 @@
       </div>
     </div>
     <div class="card">
+      <h2>👨‍👩‍👦‍👦 家族（励ましに名前を使います）</h2>
+      <div class="field" style="margin-bottom:10px"><label>奥さんの呼び方</label><input type="text" id="setWife" placeholder="例：ママ / 名前"></div>
+      <div class="mrow" style="margin:0">
+        <div class="field" style="margin:0"><label>息子(小5)の呼び方</label><input type="text" id="setSon" placeholder="例：名前"></div>
+        <div class="field" style="margin:0"><label>娘(小2)の呼び方</label><input type="text" id="setDaughter" placeholder="例：名前"></div>
+      </div>
+      <div class="hint">入れると「今日シラフで帰れば◯◯とキャッチボールできる」のように名前入りで励まします。空欄なら「息子／娘／奥さん」と表示。この名前も端末内だけに保存されます。</div>
+    </div>
+    <div class="card">
       <h2>飲む日の上限・基準</h2>
       <div class="field" id="limitField">
         <label>飲む日の上限（純アルコール g）</label>
@@ -418,6 +435,29 @@
   </div>
 </div>
 
+<!-- 踏みとどまるモード（コンビニ・帰り道） -->
+<div class="modal center" id="sosModal">
+  <div class="sheet centered">
+    <h3>🏪 踏みとどまるモード</h3>
+    <div class="fam-msg" id="famMsg"></div>
+    <div class="sos-rules">
+      いま酒コーナーに向かってないか？ ここが今日の勝負どころ。<br>
+      <b>①</b> 酒の棚には近づかない<br>
+      <b>②</b> 買うのは 水・お茶・炭酸水・コーヒー だけ<br>
+      <b>③</b> レジに直行 → まっすぐ帰る<br>
+      <b>④</b> 家に着けば波は引く。あと10分の辛抱。
+    </div>
+    <div style="text-align:center; font-size:13px; color:var(--sub); margin-bottom:12px;" id="sosSub"></div>
+    <button class="btn zero" onclick="sosWin()">✊ 買わずに（or 飲み物だけで）帰る！</button>
+    <div style="height:8px"></div>
+    <button class="btn ghost" onclick="rotFam()">💬 もう一言ほしい</button>
+    <div style="height:8px"></div>
+    <button class="btn drink" onclick="sosGiveIn()">…買ってしまった（正直に記録）</button>
+    <div style="height:8px"></div>
+    <button class="btn ghost" onclick="closeSos()">閉じる</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -451,8 +491,27 @@ const DEF={
   plan:'alt', limitG:40, restPerWeek:3,
   usualG:64, refCost:380, refKcal:480,
   fishDate:'', surfWins:0, cravings:[],
+  famWife:'', famSon:'', famDaughter:'',
   days:{}
 };
+function fam(role){
+  if(role==='wife') return D.famWife||'奥さん';
+  if(role==='son') return D.famSon||'息子';
+  if(role==='daughter') return D.famDaughter||'娘';
+}
+const FAMILY_MSGS=[
+  ()=>`今日シラフで帰れば、${fam('son')}とキャッチボールできる。酔って寝たら「また今度」で終わる。`,
+  ()=>`${fam('daughter')}は、ほろ酔いのパパより、ちゃんと話を聞いてくれるパパが好きだ。`,
+  ()=>`今夜「今日は飲まなかった」と${fam('wife')}に言える。それだけで空気が変わる。`,
+  ()=>`“申し訳ない”は、今日の1回で“ありがとう”に変えられる。始めるのは今日だ。`,
+  ()=>`${fam('son')}(小5)も${fam('daughter')}(小2)も、パパをよく見てる。背中で見せよう。`,
+  ()=>`缶2本 ¥380。1週間で約2,660円。${fam('son')}と${fam('daughter')}に使える方がいい。`,
+  ()=>`酔ったパパの週末より、動けるパパの週末。今日の1本がそれを分ける。`,
+  ()=>`10年後、元気で一緒に飲みに行けるパパでいるために、今日は飲まない。`,
+  ()=>`飲みたいのは“お前”じゃなく“習慣”だ。家族のために、習慣に勝とう。`,
+  ()=>`今日踏みとどまれた自分を、明日の朝いちばん誇れる。`,
+];
+let famIdx=0;
 let D=load();
 function load(){ try{const s=localStorage.getItem(KEY); if(s)return Object.assign({},JSON.parse(JSON.stringify(DEF)),JSON.parse(s)); }catch(e){} return JSON.parse(JSON.stringify(DEF)); }
 function save(){localStorage.setItem(KEY,JSON.stringify(D));}
@@ -540,8 +599,9 @@ function renderHome(){
   if(eveningRisk){
     dbox.style.display='block';
     const fishD=fishDays();
-    let s='仕事のストレスで飲みたくなる時間。でも今日は飲まない日だ。';
+    let s='仕事帰り、コンビニに寄りたくなる時間。でも今日は飲まない日だ。';
     if(hour>=18) s='いちばん飲みたい時間。ここを越えれば勝ち。この波は20分で引く。';
+    s+=' 今日シラフで帰れば、'+fam('son')+'と'+fam('daughter')+'に胸を張れる。';
     if(fishD!==null && fishD<=1) s='🎣 '+(fishD===0?'明日は釣り！':'あさっては釣り！')+' 今日飲むと当日ダルい。シラフで竿を出そう。';
     document.getElementById('dangerT').textContent = hour>=18?'🔥 魔の時間、ピーク':'⚠️ 夕方 — 魔の時間が近い';
     document.getElementById('dangerS').textContent=s;
@@ -686,11 +746,14 @@ function openSurf(){
 }
 let msgIdx=0;
 function rotMsg(){
-  let m=SURF_MSGS[msgIdx%SURF_MSGS.length]; msgIdx++;
+  msgIdx++;
+  let m;
+  if(msgIdx%2===0) m='👨‍👩‍👦‍👦 '+FAMILY_MSGS[Math.floor(msgIdx/2)%FAMILY_MSGS.length]();
+  else m=SURF_MSGS[msgIdx%SURF_MSGS.length];
   const fd=fishDays();
-  if(fd!==null && fd>=0 && fd<=3 && msgIdx%3===0) m='🎣 釣りまであと'+(fd===0?'今日':fd+'日')+'。二日酔いで竿を出したくないだろ？';
+  if(fd!==null && fd>=0 && fd<=3 && msgIdx%5===0) m='🎣 釣りまであと'+(fd===0?'今日':fd+'日')+'。二日酔いで竿を出したくないだろ？';
   const st=streakZero();
-  if(st>=2 && msgIdx%4===0) m='🔥 今'+st+'日連続。ここで飲めば、また0日目からだ。';
+  if(st>=2 && msgIdx%7===0) m='🔥 今'+st+'日連続。ここで飲めば、また0日目からだ。';
   document.getElementById('surfMsg').textContent=m;
 }
 function closeSurf(){clearInterval(surfInt); clearInterval(surfMsgInt); document.getElementById('surfModal').classList.remove('show');}
@@ -702,6 +765,28 @@ function surfWin(){
 function surfGiveIn(){
   D.cravings.push({d:todayKey(), trigger:surfTrigger, survived:false});
   save(); closeSurf(); openLog();
+}
+
+/* ============ 踏みとどまるモード（コンビニ・帰り道） ============ */
+function openSos(){
+  rotFam();
+  const st=streakZero(); const fd=fishDays();
+  let sub='この画面を、コンビニの前で開くのを習慣に。';
+  if(st>=2) sub=`🔥 今 ${st}日連続。ここで買えば、また0からだ。`;
+  else if(fd!==null && fd>=0 && fd<=2) sub=`🎣 釣りまであと${fd===0?'今日':fd+'日'}。シラフで竿を出そう。`;
+  document.getElementById('sosSub').textContent=sub;
+  document.getElementById('sosModal').classList.add('show');
+}
+function rotFam(){ famIdx++; document.getElementById('famMsg').textContent = FAMILY_MSGS[famIdx%FAMILY_MSGS.length](); }
+function closeSos(){document.getElementById('sosModal').classList.remove('show');}
+function sosWin(){
+  D.surfWins=(D.surfWins||0)+1;
+  D.cravings.push({d:todayKey(), trigger:'コンビニ・帰り道', survived:true});
+  save(); closeSos(); toast('✊ よく踏みとどまった！ 家族に胸を張れる'); renderHome();
+}
+function sosGiveIn(){
+  D.cravings.push({d:todayKey(), trigger:'コンビニ・帰り道', survived:false});
+  save(); closeSos(); openLog();
 }
 
 /* ============ カレンダー ============ */
@@ -802,6 +887,9 @@ function renderSet(){
   document.getElementById('setKcal').value=D.refKcal;
   document.getElementById('setUsual').value=D.usualG;
   document.getElementById('setFish').value=D.fishDate||'';
+  document.getElementById('setWife').value=D.famWife||'';
+  document.getElementById('setSon').value=D.famSon||'';
+  document.getElementById('setDaughter').value=D.famDaughter||'';
   document.getElementById('limitField').style.opacity=D.plan==='kinshu'?.4:1;
   document.getElementById('planHint').textContent =
     D.plan==='kinshu' ? '禁酒モード：1滴でも赤。連続日数を伸ばすのが目標。'
@@ -809,7 +897,7 @@ function renderSet(){
     : '毎日 上限内：休肝日は指定せず、1日の量を上限内に抑える。';
 }
 document.querySelectorAll('#planSeg button').forEach(b=>{b.onclick=()=>{D.plan=b.dataset.p; save(); renderSet(); toast('目標を変更');};});
-['setLimit','setRest','setCost','setKcal','setUsual','setFish'].forEach(id=>{
+['setLimit','setRest','setCost','setKcal','setUsual','setFish','setWife','setSon','setDaughter'].forEach(id=>{
   document.getElementById(id).addEventListener('change',()=>{
     D.limitG=+document.getElementById('setLimit').value||0;
     D.restPerWeek=Math.min(7,+document.getElementById('setRest').value||0);
@@ -817,6 +905,9 @@ document.querySelectorAll('#planSeg button').forEach(b=>{b.onclick=()=>{D.plan=b
     D.refKcal=+document.getElementById('setKcal').value||0;
     D.usualG=+document.getElementById('setUsual').value||0;
     D.fishDate=document.getElementById('setFish').value||'';
+    D.famWife=document.getElementById('setWife').value.trim();
+    D.famSon=document.getElementById('setSon').value.trim();
+    D.famDaughter=document.getElementById('setDaughter').value.trim();
     save(); toast('保存しました'); if(id==='setFish')renderHome();
   });
 });
