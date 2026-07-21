@@ -176,6 +176,21 @@
   .chip{background:var(--card2); border:1px solid var(--line); border-radius:20px; padding:8px 12px; font-size:12px; cursor:pointer;}
   .chip.on{border-color:var(--accent); background:rgba(34,211,238,.12); color:var(--accent);}
 
+  /* AIひとこと・コーチ */
+  .ai-daily{background:linear-gradient(135deg,#241a33,#1a1426); border:1px solid #3d2e5a; border-radius:14px; padding:14px; margin-bottom:12px;}
+  .ai-daily .lb{font-size:11px; color:#c4b5fd; font-weight:700; display:flex; justify-content:space-between; align-items:center;}
+  .ai-daily .tx{font-size:14px; line-height:1.7; margin-top:6px; color:#e6ddf5;}
+  .ai-daily .rf{background:none; border:none; color:#a78bfa; font-size:16px; cursor:pointer;}
+  .btn.ai{background:linear-gradient(135deg,#8b5cf6,#6d28d9); color:#fff;}
+  .chat-body{background:var(--bg); border-radius:12px; padding:12px; height:46vh; overflow-y:auto; display:flex; flex-direction:column; gap:10px; margin-bottom:10px;}
+  .bub{max-width:82%; padding:10px 13px; border-radius:16px; font-size:14px; line-height:1.6; white-space:pre-wrap; word-break:break-word;}
+  .bub.me{align-self:flex-end; background:var(--accent2); color:#04121a; border-bottom-right-radius:5px;}
+  .bub.ai{align-self:flex-start; background:var(--card2); color:var(--txt); border-bottom-left-radius:5px;}
+  .bub.err{align-self:center; background:#3a1116; color:#ffb3b0; font-size:12px;}
+  .typing{align-self:flex-start; color:var(--sub); font-size:13px; padding:6px 10px;}
+  .chat-in{display:flex; gap:8px;}
+  .chat-in input{flex:1; background:var(--card2); border:1px solid var(--line); border-radius:20px; padding:11px 14px; color:var(--txt); font-size:16px;}
+  .chat-in button{background:var(--accent); border:none; border-radius:20px; padding:0 16px; font-weight:800; color:#04121a; cursor:pointer;}
   .toast{position:fixed; left:50%; bottom:calc(80px + var(--safe-b)); transform:translateX(-50%); background:var(--green); color:#04121a; padding:10px 18px; border-radius:20px; font-size:13px; font-weight:800; z-index:80; opacity:0; transition:opacity .3s; pointer-events:none; text-align:center;}
   .toast.show{opacity:1;}
   .page{display:none;}
@@ -214,6 +229,12 @@
       <button class="btn zero" onclick="markZero()">✊ 今日は飲まずに乗り切る</button>
     </div>
 
+    <!-- AI 今日のひとこと -->
+    <div class="ai-daily" id="aiDaily" style="display:none;">
+      <div class="lb"><span>☀️ AIから今日のひとこと</span><button class="rf" onclick="loadDailyAI(true)" title="更新">🔄</button></div>
+      <div class="tx" id="aiDailyTx">…</div>
+    </div>
+
     <div class="card">
       <div style="display:flex; justify-content:space-between; align-items:baseline;">
         <h2 id="todayDateLabel" style="margin:0;">今日</h2>
@@ -235,6 +256,8 @@
 
     <div class="card">
       <button class="btn sos" onclick="openSos()">🏪 帰り道・コンビニで踏みとどまる</button>
+      <div style="height:10px"></div>
+      <button class="btn ai" onclick="openChat()">💬 AIコーチに相談する</button>
       <div style="height:10px"></div>
       <button class="btn zero" id="zeroBtn" onclick="markZero()">✊ 今日は飲まなかった（休肝日にする）</button>
       <div style="height:10px"></div>
@@ -278,6 +301,13 @@
 
   <!-- ============ 記録・恐怖 ============ -->
   <section class="page" id="page-stats">
+    <div class="card" id="aiWeeklyCard">
+      <h2>📊 AIふりかえり（この2週間）</h2>
+      <div id="aiWeeklyTx" style="font-size:14px; line-height:1.8; color:#dbe6f5; white-space:pre-wrap;">ボタンを押すと、AIがログを読んで傾向と来週の作戦を教えてくれます。</div>
+      <div style="height:10px"></div>
+      <button class="btn ai" onclick="loadWeeklyAI()">🔎 AIに分析してもらう</button>
+    </div>
+
     <div class="fear card" id="fearCard">
       <h2>⚠️ このまま毎日飲み続けると、1年で</h2>
       <div class="lead" id="fearLead"></div>
@@ -369,6 +399,28 @@
     <div class="card">
       <h2>安全のために</h2>
       <div class="note">毎日この量を続けている場合、急にゼロにすると離脱症状（手の震え・強い不安・動悸・不眠・発汗など）が出ることがあります。だから<b>「2日に1度」への漸減は正しいやり方</b>です。もし震え・幻覚・強い動悸などが出たら、我慢せず医療機関（心療内科・内科）に相談してください。このアプリは記録と踏ん張りの道具で、治療の代わりではありません。</div>
+    </div>
+    <div class="card">
+      <h2>🤖 AI連携（コーチ・今日のひとこと・週次ふりかえり）</h2>
+      <div class="field">
+        <label>使うAI</label>
+        <select id="setAiProvider">
+          <option value="">使わない</option>
+          <option value="gemini">Google Gemini（無料枠大・おすすめ）</option>
+          <option value="claude">Anthropic Claude</option>
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:10px">
+        <label>APIキー</label>
+        <input type="password" id="setAiKey" placeholder="キーを貼り付け" autocomplete="off">
+      </div>
+      <button class="btn ghost" onclick="testAI()">🔌 接続テスト</button>
+      <div class="hint" id="aiKeyHint">
+        キーの取り方：<br>
+        ・Gemini（無料）… <b>aistudio.google.com/apikey</b> で「Create API key」<br>
+        ・Claude … <b>console.anthropic.com</b> → API Keys（要クレジット登録）<br>
+        キーは<b>この端末のブラウザ内だけ</b>に保存され、リポジトリにもバックアップにも含まれません。個人利用の費用は月数十円程度（Geminiは無料枠内で収まることが多い）。
+      </div>
     </div>
     <div class="card">
       <h2>データ</h2>
@@ -463,9 +515,24 @@
     <div style="height:8px"></div>
     <button class="btn ghost" onclick="rotFam()">💬 もう一言ほしい</button>
     <div style="height:8px"></div>
+    <button class="btn ai" onclick="closeSos();openChat()">💬 AIコーチに話を聞いてもらう</button>
+    <div style="height:8px"></div>
     <button class="btn drink" onclick="sosGiveIn()">…寄って買ってしまった（正直に記録）</button>
     <div style="height:8px"></div>
     <button class="btn ghost" onclick="closeSos()">閉じる</button>
+  </div>
+</div>
+
+<!-- AIコーチ チャット -->
+<div class="modal" id="chatModal">
+  <div class="sheet">
+    <h3 style="display:flex;justify-content:space-between;align-items:center;">💬 AIコーチ <button class="btn ghost" style="width:auto;padding:6px 12px;font-size:12px;" onclick="closeChat()">閉じる</button></h3>
+    <div class="chat-body" id="chatBody"></div>
+    <div class="chat-in">
+      <input id="chatInput" type="text" placeholder="今の気持ちを打つ（例：仕事つらくて飲みたい）" onkeydown="if(event.key==='Enter')chatSend()">
+      <button onclick="chatSend()">送信</button>
+    </div>
+    <div style="font-size:10px;color:var(--muted);margin-top:8px;text-align:center;">AIは応援役です。手の震え・強い動悸など体調の異変は医療機関へ。</div>
   </div>
 </div>
 
@@ -503,8 +570,104 @@ const DEF={
   usualG:64, refCost:380, refKcal:480,
   fishDate:'', surfWins:0, cravings:[],
   famWife:'', famSon:'', famDaughter:'',
+  aiProvider:'', aiKey:'', aiDaily:null, aiWeekly:null,
   days:{}
 };
+/* ============ AI連携 ============ */
+function aiOn(){return !!(D.aiProvider && D.aiKey);}
+async function callAI(system, msgs){
+  if(!aiOn()) throw new Error('AIキーが未設定です（設定→AI連携）');
+  if(D.aiProvider==='gemini'){
+    const contents=msgs.map(m=>({role:m.role==='assistant'?'model':'user', parts:[{text:m.text}]}));
+    const url='https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+encodeURIComponent(D.aiKey);
+    const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({systemInstruction:{parts:[{text:system}]},contents,generationConfig:{temperature:0.85,maxOutputTokens:500}})});
+    if(!res.ok) throw new Error('Gemini '+res.status+'：'+(await res.text()).slice(0,140));
+    const j=await res.json();
+    return (j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts||[]).map(p=>p.text).join('')||'(応答が空でした)';
+  }else{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':D.aiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:500,system,messages:msgs.map(m=>({role:m.role,content:m.text}))})});
+    if(!res.ok) throw new Error('Claude '+res.status+'：'+(await res.text()).slice(0,140));
+    const j=await res.json();
+    return (j.content||[]).map(c=>c.text).join('')||'(応答が空でした)';
+  }
+}
+function buildContext(){
+  const k=todayKey(); const now=new Date();
+  const recent=[];
+  for(let i=1;i<=14;i++){const d=new Date(now);d.setDate(now.getDate()-i);const kk=todayKey(d);
+    if(isZeroDay(kk))recent.push(kk.slice(5)+':休'); else if(hasDrinks(kk))recent.push(kk.slice(5)+':'+Math.round(dayTotalG(kk))+'g');}
+  const fd=fishDays();
+  return [
+    '日付:'+k+' 現在時刻:'+now.getHours()+'時',
+    '今日の予定:'+(targetToday()==='rest'?'飲まない日':'飲んでもよい日(上限'+D.limitG+'g)'),
+    '今日ここまで:'+Math.round(dayTotalG(k))+'g',
+    '連続で飲まない日:'+streakZero()+'日 / 今週の休肝日:'+weekRest()+'/'+D.restPerWeek,
+    '普段:1日約'+D.usualG+'g（毎日→2日に1度を目標）',
+    (fd!==null?('次の釣りまで:'+(fd<0?'過去':fd+'日')):'釣り予定:未登録'),
+    '踏みとどまった回数:'+(D.surfWins||0),
+    '直近14日:'+(recent.join(' ')||'記録なし')
+  ].join('\n');
+}
+function aiSystem(){
+  return 'あなたは日本語で話す、節酒を支える温かいコーチです。利用者は仕事のストレスが強い40代くらいの男性で、夕方〜帰り道のコンビニでストロング系缶チューハイ(9%500と7%500=1日約64g)を毎日飲む習慣を「2日に1度」に減らそうとしています。家族思いで、飲むと家族に申し訳ないと感じています。\n'
+    +'話し方の方針：短く(3〜5文)。まず気持ちに共感し、次に今この瞬間に踏みとどまる具体的な一手を1つだけ提案する。責めない・罪悪感を煽らない。「今日やめれば胸を張れる」と前向きに。家族('+fam('wife')+'・'+fam('son')+'(小5)・'+fam('daughter')+'(小2))や釣り、連続記録を励ましに使う。飲まない日に飲みたい時は「寄らずに帰る/買わない」を後押しし、飲む日でも上限内を勧める。医療の代わりではない。手の震え・強い動悸・幻覚など離脱症状の訴えがあれば我慢せず内科か心療内科の受診を勧める。友達のような近い距離感で、説教くさくしない。\n\n【今の状況】\n'
+    +buildContext();
+}
+/* ---- コーチ会話 ---- */
+let chat=[];
+function openChat(){
+  if(!aiOn()){ if(confirm('AIコーチを使うには、設定でAIキーの登録が必要です。設定を開きますか？')) go('set'); return; }
+  chat=[]; document.getElementById('chatBody').innerHTML='';
+  document.getElementById('chatModal').classList.add('show');
+  // 最初の一声をAIから
+  addTyping();
+  callAI(aiSystem(),[{role:'user',text:'（利用者がコーチ相談を開きました。今の状況を踏まえて、まず短く声をかけてください）'}])
+    .then(r=>{chat.push({role:'assistant',text:r}); replaceTyping(r,'ai');})
+    .catch(e=>replaceTyping('接続できませんでした：'+e.message,'err'));
+}
+function closeChat(){document.getElementById('chatModal').classList.remove('show');}
+function bubble(text,cls){const b=document.getElementById('chatBody');const d=document.createElement('div');d.className='bub '+cls;d.textContent=text;b.appendChild(d);b.scrollTop=b.scrollHeight;return d;}
+let typingEl=null;
+function addTyping(){const b=document.getElementById('chatBody');typingEl=document.createElement('div');typingEl.className='typing';typingEl.textContent='コーチが考えています…';b.appendChild(typingEl);b.scrollTop=b.scrollHeight;}
+function replaceTyping(text,cls){if(typingEl){typingEl.remove();typingEl=null;} bubble(text,cls);}
+function chatSend(){
+  const inp=document.getElementById('chatInput'); const t=inp.value.trim(); if(!t)return;
+  inp.value=''; bubble(t,'me'); chat.push({role:'user',text:t}); addTyping();
+  callAI(aiSystem(),chat).then(r=>{chat.push({role:'assistant',text:r}); replaceTyping(r,'ai');})
+    .catch(e=>replaceTyping('エラー：'+e.message,'err'));
+}
+/* ---- 今日のひとこと ---- */
+function loadDailyAI(force){
+  const card=document.getElementById('aiDaily');
+  if(!aiOn()){card.style.display='none'; return;}
+  card.style.display='block';
+  const k=todayKey();
+  if(!force && D.aiDaily && D.aiDaily.date===k){ document.getElementById('aiDailyTx').textContent=D.aiDaily.msg; return; }
+  document.getElementById('aiDailyTx').textContent='…考え中';
+  callAI(aiSystem()+'\n\n上記を踏まえ、今日の励ましを1〜2文だけ、短く。前置き不要。', [{role:'user',text:'今日のひとことを1つ。'}])
+    .then(m=>{D.aiDaily={date:k,msg:m}; save(); document.getElementById('aiDailyTx').textContent=m;})
+    .catch(e=>{document.getElementById('aiDailyTx').textContent='（取得できませんでした：'+e.message+'）';});
+}
+/* ---- 週次ふりかえり ---- */
+function loadWeeklyAI(){
+  if(!aiOn()){ if(confirm('AI連携の設定が必要です。設定を開きますか？')) go('set'); return; }
+  const tx=document.getElementById('aiWeeklyTx'); tx.textContent='AIが分析中…';
+  callAI(aiSystem()+'\n\n直近14日のログを分析し、①よく頑張れている点 ②崩れやすいパターン ③来週の具体的な作戦、を合計5〜7文で。優しく、実践的に。', [{role:'user',text:'この2週間をふりかえって、傾向と来週の作戦を教えて。'}])
+    .then(m=>{tx.textContent=m;})
+    .catch(e=>{tx.textContent='分析できませんでした：'+e.message;});
+}
+function testAI(){
+  const p=document.getElementById('setAiProvider').value, key=document.getElementById('setAiKey').value.trim();
+  if(!p||!key){toast('AIとキーを両方入れてください');return;}
+  D.aiProvider=p; D.aiKey=key; save();
+  toast('テスト中…');
+  callAI('あなたはテスト応答役です。','日本語で「接続OK」とだけ返して'.length?[{role:'user',text:'日本語で「接続OK」とだけ返して'}]:[])
+    .then(r=>{alert('✅ 接続成功！\n応答：'+r);})
+    .catch(e=>{alert('❌ 接続失敗：\n'+e.message+'\n\nキーやプロバイダ選択を確認してください。');});
+}
 function fam(role){
   if(role==='wife') return D.famWife||'奥さん';
   if(role==='son') return D.famSon||'息子';
@@ -629,6 +792,8 @@ function renderHome(){
 
   // 釣り
   renderFish();
+  // AI今日のひとこと（未設定なら非表示、当日キャッシュ済みならAPIを呼ばない）
+  loadDailyAI(false);
 }
 function renderFish(){
   const box=document.getElementById('fishBox');
@@ -908,6 +1073,8 @@ function renderSet(){
   document.getElementById('setWife').value=D.famWife||'';
   document.getElementById('setSon').value=D.famSon||'';
   document.getElementById('setDaughter').value=D.famDaughter||'';
+  document.getElementById('setAiProvider').value=D.aiProvider||'';
+  document.getElementById('setAiKey').value=D.aiKey||'';
   document.getElementById('limitField').style.opacity=D.plan==='kinshu'?.4:1;
   document.getElementById('planHint').textContent =
     D.plan==='kinshu' ? '禁酒モード：1滴でも赤。連続日数を伸ばすのが目標。'
@@ -915,7 +1082,7 @@ function renderSet(){
     : '毎日 上限内：休肝日は指定せず、1日の量を上限内に抑える。';
 }
 document.querySelectorAll('#planSeg button').forEach(b=>{b.onclick=()=>{D.plan=b.dataset.p; save(); renderSet(); toast('目標を変更');};});
-['setLimit','setRest','setCost','setKcal','setUsual','setFish','setWife','setSon','setDaughter'].forEach(id=>{
+['setLimit','setRest','setCost','setKcal','setUsual','setFish','setWife','setSon','setDaughter','setAiProvider','setAiKey'].forEach(id=>{
   document.getElementById(id).addEventListener('change',()=>{
     D.limitG=+document.getElementById('setLimit').value||0;
     D.restPerWeek=Math.min(7,+document.getElementById('setRest').value||0);
@@ -926,10 +1093,12 @@ document.querySelectorAll('#planSeg button').forEach(b=>{b.onclick=()=>{D.plan=b
     D.famWife=document.getElementById('setWife').value.trim();
     D.famSon=document.getElementById('setSon').value.trim();
     D.famDaughter=document.getElementById('setDaughter').value.trim();
-    save(); toast('保存しました'); if(id==='setFish')renderHome();
+    D.aiProvider=document.getElementById('setAiProvider').value;
+    D.aiKey=document.getElementById('setAiKey').value.trim();
+    save(); toast('保存しました'); if(id==='setFish'||id==='setAiProvider'||id==='setAiKey')renderHome();
   });
 });
-function exportData(){const t=JSON.stringify(D); (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>prompt('コピーしました。メモ等に保管：',t),()=>prompt('下記を保管してください：',t));}
+function exportData(){const t=JSON.stringify(Object.assign({},D,{aiKey:''})); (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>prompt('コピーしました。メモ等に保管（APIキーは安全のため含めていません）：',t),()=>prompt('下記を保管してください（APIキーは含みません）：',t));}
 function importData(){const t=prompt('バックアップ文字列を貼り付け：'); if(!t)return; try{D=Object.assign({},JSON.parse(JSON.stringify(DEF)),JSON.parse(t)); save(); renderSet(); renderHome(); toast('復元しました');}catch(e){alert('読み込めませんでした');}}
 function resetAll(){if(confirm('本当に全データを消しますか？（元に戻せません）')){localStorage.removeItem(KEY); D=JSON.parse(JSON.stringify(DEF)); renderSet(); renderHome(); toast('消去しました');}}
 
