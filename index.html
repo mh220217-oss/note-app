@@ -448,6 +448,11 @@
       </div>
     </div>
     <div class="card">
+      <h2>🧠 まひろが覚えている“あなた”（会話から蓄積）</h2>
+      <textarea id="setPersona" rows="8" style="width:100%; background:var(--card2); border:1px solid var(--line); border-radius:10px; padding:12px; color:var(--txt); font-size:13px; line-height:1.7; resize:vertical;" placeholder="まひろと話すほど、ここにあなたの人となりが自動でたまっていきます。"></textarea>
+      <div class="hint">会話から性格・趣味・お酒のきっかけ等を自動でメモし、ずっと積み上げます。手直し・追記も自由（編集して欄外をタップで保存）。全部消したいときは空にして保存。この内容も端末内だけに保存されます。</div>
+    </div>
+    <div class="card">
       <h2>データ</h2>
       <button class="btn ghost" onclick="exportData()">📤 バックアップを書き出す</button>
       <div style="height:8px"></div>
@@ -456,7 +461,7 @@
       <button class="btn danger" onclick="resetAll()">全データを消去</button>
       <div class="hint">データはこの端末のブラウザ内だけに保存されます。機種変更前に書き出しておくと安心です。</div>
     </div>
-    <div style="text-align:center; color:var(--muted); font-size:11px; margin-top:6px;">節酒アプリ v3.7 ・ 自分用</div>
+    <div style="text-align:center; color:var(--muted); font-size:11px; margin-top:6px;">節酒アプリ v3.8 ・ 自分用</div>
   </section>
 </div>
 
@@ -622,6 +627,7 @@ const DEF={
   fishDate:'', surfWins:0, cravings:[],
   famWife:'', famSon:'', famDaughter:'',
   aiProvider:'', aiKey:'', aiDaily:null, aiWeekly:null, aiGeminiModel:'', chatLog:[],
+  persona:'', personaSince:0,
   days:{}
 };
 /* ============ AI連携 ============ */
@@ -710,7 +716,9 @@ function aiSystem(){
     +'話題：節酒の相談だけじゃなく、仕事の愚痴・釣り・日常の雑談にも普通に付き合う。話がお酒に向いたら、そっと「飲まない/上限内」を後押しする。返事は長くしすぎず2〜4文。\n'
     +'記憶：これまでの会話や下の【今の状況】を覚えている前提で、自然に続きとして話す。以前の話題や約束があれば触れてあげて。\n'
     +'安全：説教くさくしない。責めない・罪悪感を煽らない。手の震え・強い動悸・幻覚など離脱症状の訴えがあれば、我慢せず内科か心療内科の受診をやさしく勧める。医療の代わりではない。\n\n'
-    +'家族の呼び名：奥さん='+fam('wife')+'／息子='+fam('son')+'(小5)／娘='+fam('daughter')+'(小2)。\n\n【今の状況】\n'
+    +'家族の呼び名：奥さん='+fam('wife')+'／息子='+fam('son')+'(小5)／娘='+fam('daughter')+'(小2)。\n'
+    +(D.persona ? '\n【まひろが覚えている“あなたの人となり”（会話から蓄積・とても大事）】\n'+D.persona+'\n' : '')
+    +'\n【今の状況】\n'
     +buildContext();
 }
 /* ---- キャラ（コーチ ミオ）：かわいい女の子・状態で表情が変わる ---- */
@@ -802,6 +810,26 @@ function renderAvatar(){
   img.src=src;
 }
 
+/* ---- 人物メモ（会話から“あなたの人となり”を永続蓄積） ---- */
+let personaBusy=false;
+async function updatePersona(){
+  if(!aiOn() || personaBusy) return;
+  const msgs=(D.chatLog||[]).slice(-24);
+  if(!msgs.length) return;
+  personaBusy=true;
+  const recent=msgs.map(m=>(m.role==='user'?'本人: ':'まひろ: ')+m.text).join('\n');
+  const sys='あなたは、利用者(本人)の“人となり”を記録・更新する係です。次の【現在のメモ】に、【会話】から新しく分かった事実だけを追記・統合してください。'
+    +'記録対象：性格、価値観、好き嫌い、仕事、趣味(釣り等)、家族や人間関係、飲みたくなる状況やきっかけ、目標、大事な出来事、こだわり、口ぐせ。'
+    +'ルール：既存の情報は消さない/憶測や創作はしない(会話に実際に出たことだけ)/箇条書きで簡潔に/重複や似た項目は1つにまとめる/全体が長くなりすぎたら古い細部を要約して圧縮/カテゴリ見出し(例: ■性格 ■趣味 ■お酒のきっかけ)で整理。'
+    +'出力は「更新後のメモ本文」だけ。前置き・説明・挨拶は書かない。';
+  const usr='【現在のメモ】\n'+(D.persona||'(まだ空です)')+'\n\n【会話】\n'+recent;
+  try{
+    const r=await callAI(sys,[{role:'user',text:usr}]);
+    if(r && r.trim().length>3){ D.persona=r.trim().slice(0,3500); D.personaSince=0; save(); }
+  }catch(e){ /* 失敗時は次回に持ち越し */ }
+  personaBusy=false;
+}
+
 /* ---- コーチ会話（記憶あり・永続） ---- */
 function pushMsg(role,text){ if(!D.chatLog)D.chatLog=[]; D.chatLog.push({role,text}); if(D.chatLog.length>60)D.chatLog=D.chatLog.slice(-60); save(); }
 function renderChatLog(){
@@ -820,7 +848,7 @@ function openChat(){
       .catch(e=>replaceTyping('ごめん、今つながらないみたい…：'+e.message,'err'));
   }
 }
-function closeChat(){document.getElementById('chatModal').classList.remove('show');}
+function closeChat(){document.getElementById('chatModal').classList.remove('show'); if((D.personaSince||0)>0) updatePersona();}
 function clearChat(){ if(confirm('まひろとの会話の記憶を全部消す？（元に戻せないよ）')){ D.chatLog=[]; save(); renderChatLog(); toast('会話をリセットしたよ'); } }
 function bubble(text,cls){const b=document.getElementById('chatBody');const d=document.createElement('div');d.className='bub '+cls;d.textContent=text;b.appendChild(d);b.scrollTop=b.scrollHeight;return d;}
 let typingEl=null;
@@ -829,9 +857,9 @@ function replaceTyping(text,cls){if(typingEl){typingEl.remove();typingEl=null;} 
 function chatSend(){
   const inp=document.getElementById('chatInput'); const t=inp.value.trim(); if(!t)return;
   if(!aiOn()){ openChat(); return; }
-  inp.value=''; bubble(t,'me'); pushMsg('user',t); addTyping();
+  inp.value=''; bubble(t,'me'); pushMsg('user',t); D.personaSince=(D.personaSince||0)+1; save(); addTyping();
   const recent=(D.chatLog||[]).slice(-20).map(m=>({role:m.role, text:m.text}));
-  callAI(aiSystem(),recent).then(r=>{pushMsg('assistant',r); replaceTyping(r,'ai');})
+  callAI(aiSystem(),recent).then(r=>{pushMsg('assistant',r); replaceTyping(r,'ai'); if((D.personaSince||0)>=6) updatePersona();})
     .catch(e=>replaceTyping('ごめん、うまく返せなかった…：'+e.message,'err'));
 }
 /* ---- 今日のひとこと ---- */
@@ -1404,6 +1432,7 @@ function renderSet(){
   document.getElementById('setDaughter').value=D.famDaughter||'';
   document.getElementById('setAiProvider').value=D.aiProvider||'';
   document.getElementById('setAiKey').value=D.aiKey||'';
+  document.getElementById('setPersona').value=D.persona||'';
   document.getElementById('limitField').style.opacity=D.plan==='kinshu'?.4:1;
   document.getElementById('planHint').textContent =
     D.plan==='kinshu' ? '禁酒モード：1滴でも赤。連続日数を伸ばすのが目標。'
@@ -1411,7 +1440,7 @@ function renderSet(){
     : '毎日 上限内：休肝日は指定せず、1日の量を上限内に抑える。';
 }
 document.querySelectorAll('#planSeg button').forEach(b=>{b.onclick=()=>{D.plan=b.dataset.p; save(); renderSet(); toast('目標を変更');};});
-['setLimit','setRest','setCost','setKcal','setUsual','setFish','setWife','setSon','setDaughter','setAiProvider','setAiKey'].forEach(id=>{
+['setLimit','setRest','setCost','setKcal','setUsual','setFish','setWife','setSon','setDaughter','setAiProvider','setAiKey','setPersona'].forEach(id=>{
   document.getElementById(id).addEventListener('change',()=>{
     D.limitG=+document.getElementById('setLimit').value||0;
     D.restPerWeek=Math.min(7,+document.getElementById('setRest').value||0);
@@ -1425,6 +1454,7 @@ document.querySelectorAll('#planSeg button').forEach(b=>{b.onclick=()=>{D.plan=b
     const npv=document.getElementById('setAiProvider').value, nkey=cleanKey(document.getElementById('setAiKey').value);
     if(npv!==D.aiProvider||nkey!==D.aiKey){ D.aiGeminiModel=''; D.aiDaily=null; } // キー変更で選び直し
     D.aiProvider=npv; D.aiKey=nkey;
+    D.persona=document.getElementById('setPersona').value.slice(0,3500);
     save(); toast('保存しました'); if(id==='setFish'||id==='setAiProvider'||id==='setAiKey')renderHome();
   });
 });
