@@ -478,7 +478,7 @@
       <button class="btn danger" onclick="resetAll()">全データを消去</button>
       <div class="hint">データはこの端末のブラウザ内だけに保存されます。機種変更前に書き出しておくと安心です。</div>
     </div>
-    <div style="text-align:center; color:var(--muted); font-size:11px; margin-top:6px;">節酒アプリ v4.2 ・ 自分用</div>
+    <div style="text-align:center; color:var(--muted); font-size:11px; margin-top:6px;">節酒アプリ v4.3 ・ 自分用</div>
   </section>
 </div>
 
@@ -900,7 +900,7 @@ function chatSend(){
 // 今日の状態が変わったら（宣言した・飲んだ等）ひとことも作り直す
 function dailyStateKey(){
   const k=todayKey();
-  return k+'|'+(isZeroDay(k)?'zero':(hasDrinks(k)?'drank':'none'))+'|'+targetToday();
+  return k+'|'+(isZeroDay(k)?'zero':(hasDrinks(k)?'drank':'none'))+'|'+targetToday()+'|p'+((D.persona||'').length>>7);
 }
 let dailyBusy=false;
 function loadDailyAI(force){
@@ -913,7 +913,7 @@ function loadDailyAI(force){
   if(dailyBusy) return; // 生成中の多重呼び出し防止
   dailyBusy=true;
   document.getElementById('aiDailyTx').textContent='…考え中';
-  callAI(aiSystem()+'\n\n上記を踏まえ、今日の励ましを1〜2文だけ、短く。前置き不要。', [{role:'user',text:'今日のひとことを1つ。'}])
+  callAI(aiSystem()+'\n\n上の【あなたの人となり】と最近の記録を踏まえて、まひろから“今日のひとこと”を書いて。できれば相手の具体的なこと（釣り・仕事・家族・前に話した話題・連続日数など）に1つ自然に触れて、その人だけに向けた言葉にすること。お姉さん口調で1〜2文、短く。定型の挨拶や前置きは不要。', [{role:'user',text:'今日のひとことを1つ。'}])
     .then(m=>{D.aiDaily={date:todayKey(),state:st,msg:m}; save(); document.getElementById('aiDailyTx').textContent=m;})
     .catch(e=>{document.getElementById('aiDailyTx').textContent='（取得できませんでした：'+e.message+'）';})
     .finally(()=>{dailyBusy=false;});
