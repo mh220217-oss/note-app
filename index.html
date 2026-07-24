@@ -152,6 +152,7 @@
 
   .modal{position:fixed; inset:0; background:rgba(0,0,0,.72); z-index:60; display:none; align-items:flex-end; justify-content:center;}
   .modal.show{display:flex;}
+  #logModal{z-index:70;}
   .modal.center{align-items:center; padding:16px;}
   .sheet{background:var(--card); width:100%; max-width:520px; border-radius:20px 20px 0 0; padding:18px 16px calc(20px + var(--safe-b)); max-height:90vh; overflow:auto; animation:up .25s ease;}
   .sheet.centered{border-radius:20px; max-height:92vh;}
@@ -477,7 +478,7 @@
       <button class="btn danger" onclick="resetAll()">全データを消去</button>
       <div class="hint">データはこの端末のブラウザ内だけに保存されます。機種変更前に書き出しておくと安心です。</div>
     </div>
-    <div style="text-align:center; color:var(--muted); font-size:11px; margin-top:6px;">節酒アプリ v4.1 ・ 自分用</div>
+    <div style="text-align:center; color:var(--muted); font-size:11px; margin-top:6px;">節酒アプリ v4.2 ・ 自分用</div>
   </section>
 </div>
 
@@ -512,6 +513,20 @@
     <button class="btn primary" onclick="saveLog()">記録する</button>
     <div style="height:8px"></div>
     <button class="btn ghost" onclick="closeLog()">キャンセル</button>
+  </div>
+</div>
+
+<!-- 日別エディタ（カレンダーから編集） -->
+<div class="modal" id="dayModal">
+  <div class="sheet">
+    <h3 id="dayTitle">記録</h3>
+    <button class="btn zero" id="dayZeroBtn" onclick="dayToggleZero()">✊ 飲まない日にする</button>
+    <div style="height:12px"></div>
+    <div id="dayDrinks"></div>
+    <div style="text-align:center; color:var(--sub); font-size:13px; margin:10px 0;" id="dayTotal"></div>
+    <button class="btn ghost" onclick="openLog(editDate)">＋ 飲んだものを追加</button>
+    <div style="height:8px"></div>
+    <button class="btn primary" onclick="closeDayModal()">完了</button>
   </div>
 </div>
 
@@ -1153,8 +1168,9 @@ function weekRest(){
 }
 
 /* ============ 記録モーダル ============ */
-let sel=null, cntVal=1;
-function openLog(){
+let sel=null, cntVal=1, logDate=null;
+function openLog(date){
+  logDate = (typeof date==='string') ? date : null;
   sel=PRESETS[0]; cntVal=1;
   const el=document.getElementById('presetList'); el.innerHTML='';
   PRESETS.forEach(p=>{
@@ -1181,7 +1197,13 @@ function curDrink(){
 }
 function updatePreview(){const d=curDrink(); document.getElementById('logPreview').textContent=`合計 ${Math.round(d.g*cntVal)}g ・ ${d.kcal*cntVal}kcal ・ ¥${d.cost*cntVal}`;}
 document.addEventListener('input',e=>{if(['cMl','cPct','cCost','cKcal'].includes(e.target.id))updatePreview();});
-function saveLog(){const d=curDrink(); const k=todayKey(); const o=dayObj(k); o.zero=false; o.drinks.push({...d,count:cntVal}); save(); closeLog(); renderHome(); toast('記録しました');}
+function saveLog(){
+  const d=curDrink(); const k=logDate||todayKey(); const o=dayObj(k); o.zero=false; o.drinks.push({...d,count:cntVal});
+  save(); closeLog();
+  if(logDate && document.getElementById('dayModal').classList.contains('show')) renderDayEditor();
+  else renderHome();
+  toast('記録しました');
+}
 
 /* ============ 波乗りタイマー ============ */
 let surfSec=0, surfInt=null, surfMsgInt=null, surfTrigger='';
@@ -1441,7 +1463,7 @@ function renderCal(){
     if(cls)cell.classList.add(cls);
     if(k===todayKey())cell.classList.add('today');
     cell.innerHTML=`<div>${day}</div><div class="dg">${dg}</div>`;
-    cell.onclick=()=>openDay(k); grid.appendChild(cell);
+    cell.onclick=()=>editDay(k); grid.appendChild(cell);
   }
   document.getElementById('mZero').textContent=cz;
   document.getElementById('mDrink').textContent=cd+co;
@@ -1449,14 +1471,33 @@ function renderCal(){
   const recorded=cz+cd+co;
   document.getElementById('altProgress').textContent = recorded? `記録した${recorded}日のうち、飲まなかったのは${cz}日（${Math.round(cz/recorded*100)}%）。2日に1度＝50%が目標。`:'';
 }
-function openDay(k){
-  if(k===todayKey()){go('home'); return;}
-  const o=D.days[k]; const g=dayTotalG(k);
-  let txt=fmtKey(k)+'\n';
-  if(isZeroDay(k)) txt+='✊ 飲まなかった日';
-  else if(hasDrinks(k)) txt+='計 '+Math.round(g)+'g\n'+o.drinks.map(x=>`・${x.name}×${x.count}`).join('\n');
-  else txt+='記録なし';
-  alert(txt);
+/* ---- 日別エディタ（カレンダーから飲んだ日・量を編集） ---- */
+let editDate=null;
+function editDay(k){ editDate=k; renderDayEditor(); document.getElementById('dayModal').classList.add('show'); }
+function closeDayModal(){ document.getElementById('dayModal').classList.remove('show'); editDate=null; renderCal(); if(document.getElementById('page-home').classList.contains('on'))renderHome(); }
+function renderDayEditor(){
+  const k=editDate; const o=D.days[k]||{drinks:[],zero:false}; const drinks=o.drinks||[];
+  document.getElementById('dayTitle').textContent=fmtKey(k)+' の記録';
+  const isZ=o.zero && !drinks.length;
+  const zb=document.getElementById('dayZeroBtn');
+  zb.textContent=isZ?'✅ 飲まない日（タップで解除）':'✊ 飲まない日にする';
+  zb.style.opacity=isZ?.85:1;
+  const dd=document.getElementById('dayDrinks'); dd.innerHTML='';
+  if(!drinks.length){ dd.innerHTML='<div class="empty">飲んだ記録はありません</div>'; }
+  else drinks.forEach((x,i)=>{
+    const div=document.createElement('div'); div.className='log-item';
+    div.innerHTML='<span class="em">'+(x.em||'🍶')+'</span><div class="info"><div class="n">'+x.name+' ×'+x.count+'</div>'
+      +'<div class="d">'+Math.round(x.g*x.count)+'g ・ '+(x.kcal*x.count)+'kcal ・ ¥'+(x.cost*x.count)+'</div></div><span class="del">✕</span>';
+    div.querySelector('.del').onclick=()=>{ o.drinks.splice(i,1); D.days[k]=o; save(); renderDayEditor(); };
+    dd.appendChild(div);
+  });
+  document.getElementById('dayTotal').textContent='合計 '+Math.round(dayTotalG(k))+'g（純アルコール）';
+}
+function dayToggleZero(){
+  const k=editDate; const o=dayObj(k);
+  if(o.zero && !(o.drinks&&o.drinks.length)){ o.zero=false; }
+  else { o.drinks=[]; o.zero=true; }
+  save(); renderDayEditor();
 }
 
 /* ============ 統計・恐怖 ============ */
